@@ -3,17 +3,18 @@
 This module contains helper functions for parsing JDFTx output files.
 """
 
-from typing import Optional
+from __future__ import annotations
 
 
 def get_start_lines(
     text: list[str],
-    start_key: Optional[str] = "*************** JDFTx",
-    add_end: Optional[bool] = False,
+    start_key: str = "*************** JDFTx",
+    add_end: bool = False,
 ) -> list[int]:
-    """
-    Get the line numbers corresponding to the beginning of seperate JDFTx calculations
-    (in case of multiple calculations appending the same out file)
+    """Get start line numbers for JDFTx calculations.
+
+    Get the line numbers corresponding to the beginning of separate JDFTx calculations
+    (in case of multiple calculations appending the same out file).
 
     Args:
         text: output of read_file for out file
@@ -27,9 +28,10 @@ def get_start_lines(
     return start_lines
 
 
-def find_key_first(key_input, tempfile):
+def find_key_first(key_input: str, tempfile: list[str]) -> int | None:
     """
-    Finds first instance of key in output file.
+
+    Find first instance of key in output file.
 
     Parameters
     ----------
@@ -47,9 +49,10 @@ def find_key_first(key_input, tempfile):
     return line
 
 
-def find_key(key_input, tempfile):
+def find_key(key_input: str, tempfile: list[str]) -> int | None:
     """
-    Finds last instance of key in output file.
+
+    Find last instance of key in output file.
 
     Parameters
     ----------
@@ -74,7 +77,8 @@ def find_first_range_key(
     skip_pound: bool = False,
 ) -> list[int]:
     """
-    Find all lines that exactly begin with key_input in a range of lines
+
+    Find all lines that exactly begin with key_input in a range of lines.
 
     Parameters
     ----------
@@ -97,25 +101,25 @@ def find_first_range_key(
     """
     key_input = str(key_input)
     startlen = len(key_input)
-    L = []
+    line_list = []
 
     if endline == -1:
         endline = len(tempfile)
     for i in range(startline, endline):
         line = tempfile[i]
-        if skip_pound == True:
-            for j in range(10):  # repeat to make sure no really weird formatting
+        if skip_pound:
+            for _ in range(10):  # repeat to make sure no really weird formatting
                 line = line.lstrip()
                 line = line.lstrip("#")
         line = line[0:startlen]
         if line == key_input:
-            L.append(i)
-    if not L:
-        L = [len(tempfile)]
-    return L
+            line_list.append(i)
+    if not line_list:
+        line_list = [len(tempfile)]
+    return line_list
 
 
-def key_exists(key_input: str, tempfile: list[str]):
+def key_exists(key_input: str, tempfile: list[str]) -> bool:
     """Check if key_input exists in tempfile.
 
     Search through tempfile for key_input. Return True if found,
@@ -134,12 +138,10 @@ def key_exists(key_input: str, tempfile: list[str]):
         True if key_input exists in tempfile, False otherwise
     """
     line = find_key(key_input, tempfile)
-    if line == None:
-        return False
-    return True
+    return line is not None
 
 
-def find_all_key(key_input: str, tempfile: list[str], startline: int = 0):
+def find_all_key(key_input: str, tempfile: list[str], startline: int = 0) -> list[int]:
     """Find all lines containing key_input.
 
     Search through tempfile for all lines containing key_input. Returns a list
@@ -159,11 +161,7 @@ def find_all_key(key_input: str, tempfile: list[str], startline: int = 0):
     line_list: list[int]
         list of line numbers where key_input occurs
     """
-    line_list = []  # default
-    for i in range(startline, len(tempfile)):
-        if key_input in tempfile[i]:
-            line_list.append(i)
-    return line_list
+    return [i for i in range(startline, len(tempfile)) if key_input in tempfile[i]]
 
 
 def get_pseudo_read_section_bounds(text: list[str]) -> list[list[int]]:

@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
-from pymatgen.core import Structure
+
+if TYPE_CHECKING:
+    from pymatgen.core import Structure
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.core.units import Ha_to_eV, ang_to_bohr
 
