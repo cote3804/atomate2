@@ -1,4 +1,4 @@
-""" Module containing helper functions for parsing JDFTx output files.
+"""Module containing helper functions for parsing JDFTx output files.
 
 This module contains helper functions for parsing JDFTx output files.
 """
@@ -116,7 +116,7 @@ def find_first_range_key(
 
 
 def key_exists(key_input: str, tempfile: list[str]):
-    """ Check if key_input exists in tempfile.
+    """Check if key_input exists in tempfile.
 
     Search through tempfile for key_input. Return True if found,
     False otherwise.
@@ -140,11 +140,11 @@ def key_exists(key_input: str, tempfile: list[str]):
 
 
 def find_all_key(key_input: str, tempfile: list[str], startline: int = 0):
-    """ Find all lines containing key_input.
-    
+    """Find all lines containing key_input.
+
     Search through tempfile for all lines containing key_input. Returns a list
     of line numbers.
-    
+
     Parameters
     ----------
     key_input: str
@@ -153,7 +153,7 @@ def find_all_key(key_input: str, tempfile: list[str], startline: int = 0):
         output from readlines() function in read_file method
     startline: int
         line to start searching from
-        
+
     Returns
     -------
     line_list: list[int]
@@ -164,3 +164,30 @@ def find_all_key(key_input: str, tempfile: list[str], startline: int = 0):
         if key_input in tempfile[i]:
             line_list.append(i)
     return line_list
+
+
+def get_pseudo_read_section_bounds(text: list[str]) -> list[list[int]]:
+    """Get the boundary line numbers for the pseudopotential read section.
+
+    Get the boundary line numbers for the pseudopotential read section.
+
+    Parameters
+    ----------
+    text: list[str]
+        output of read_file for out file
+
+    Returns
+    -------
+    section_bounds: list[list[int]]
+        list of line numbers for the pseudopotential read sections
+    """
+    start_lines = find_all_key("Reading pseudopotential file", text)
+    section_bounds = []
+    for start_line in start_lines:
+        bounds = [start_line]
+        for i in range(start_line, len(text)):
+            if not len(text[i].strip()):
+                bounds.append(i)
+                break
+        section_bounds.append(bounds)
+    return section_bounds
