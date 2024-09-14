@@ -1,43 +1,32 @@
+"""JDFTx out file parsing class.
+
+A class to read and process a JDFTx out file.
+"""
+
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from functools import wraps
 from pathlib import Path
-from typing import List, Optional
-import numpy as np
-
+from typing import Any, Callable
 
 from monty.io import zopen
 
 from atomate2.jdftx.io.jdftxoutfileslice import JDFTXOutfileSlice
-from atomate2.jdftx.io.jminsettings import (
-    JMinSettingsElectronic,
-    JMinSettingsFluid,
-    JMinSettingsIonic,
-    JMinSettingsLattice,
-)
-from atomate2.jdftx.io.joutstructures import JOutStructures
+from atomate2.jdftx.io.jdftxoutfileslice_helpers import get_start_lines
 
 
-class ClassPrintFormatter:
-    def __str__(self) -> str:
-        """Generic means of printing class to command line in readable format"""
-        return (
-            str(self.__class__)
-            + "\n"
-            + "\n".join(
-                str(item) + " = " + str(self.__dict__[item])
-                for item in sorted(self.__dict__)
-            )
-        )
+def check_file_exists(func: Callable) -> Any:
+    """Check if file exists.
 
-
-def check_file_exists(func):
-    """Check if file exists (and continue normally) or raise an exception if it does not"""
+    Check if file exists (and continue normally) or raise an exception if
+    it does not.
+    """
 
     @wraps(func)
-    def wrapper(filename):
-        filename = Path(filename)
-        if not filename.is_file():
+    def wrapper(filename: str) -> Any:
+        filepath = Path(filename)
+        if not filepath.is_file():
             raise OSError(f"'{filename}' file doesn't exist!")
         return func(filename)
 
@@ -47,7 +36,7 @@ def check_file_exists(func):
 @check_file_exists
 def read_file(file_name: str) -> list[str]:
     """
-    Read file into a list of str
+    Read file into a list of str.
 
     Parameters
     ----------
@@ -61,33 +50,13 @@ def read_file(file_name: str) -> list[str]:
     """
     with zopen(file_name, "r") as f:
         text = f.readlines()
+    f.close()
     return text
-
-
-def get_start_lines(
-    text: list[str],
-    start_key: Optional[str] = "*************** JDFTx",
-    add_end: Optional[bool] = False,
-) -> list[int]:
-    """
-    Get the line numbers corresponding to the beginning of seperate JDFTx calculations
-    (in case of multiple calculations appending the same out file)
-
-    Args:
-        text: output of read_file for out file
-    """
-    start_lines = []
-    for i, line in enumerate(text):
-        if start_key in line:
-            start_lines.append(i)
-    if add_end:
-        start_lines.append(i)
-    return start_lines
 
 
 def read_outfile_slices(file_name: str) -> list[list[str]]:
     """
-    Read slice of out file into a list of str
+    Read slice of out file into a list of str.
 
     Parameters
     ----------
@@ -111,126 +80,70 @@ def read_outfile_slices(file_name: str) -> list[list[str]]:
 
 
 @dataclass
-class JDFTXOutfile(JDFTXOutfileSlice):
-    """
-    A class to read and process a JDFTx out file
+class JDFTXOutfile:
+    """JDFTx out file parsing class.
+
+    A class to read and process a JDFTx out file.
     """
 
-    prefix: str = None
     slices: list[JDFTXOutfileSlice] = field(default_factory=list)
-
-    jstrucs: JOutStructures = None
-    jsettings_fluid: (
-        JMinSettingsFluid
-        | JMinSettingsElectronic
-        | JMinSettingsLattice
-        | JMinSettingsIonic
-    ) = None
-    jsettings_electronic: (
-        JMinSettingsFluid
-        | JMinSettingsElectronic
-        | JMinSettingsLattice
-        | JMinSettingsIonic
-    ) = None
-    jsettings_lattice: (
-        JMinSettingsFluid
-        | JMinSettingsElectronic
-        | JMinSettingsLattice
-        | JMinSettingsIonic
-    ) = None
-    jsettings_ionic: (
-        JMinSettingsFluid
-        | JMinSettingsElectronic
-        | JMinSettingsLattice
-        | JMinSettingsIonic
-    ) = None
-
-    xc_func: str = None
-
-    # lattice_initial: list[list[float]] = None
-    # lattice_final: list[list[float]] = None
-    # lattice: list[list[float]] = None
-    lattice_initial: np.ndarray = None
-    lattice_final: np.ndarray = None
-    lattice: np.ndarray = None
-    a: float = None
-    b: float = None
-    c: float = None
-
-    fftgrid: list[int] = None
-    geom_opt: bool = None
-    geom_opt_type: str = None
-
-    # grouping fields related to electronic parameters.
-    # Used by the get_electronic_output() method
-    _electronic_output = [
-        "efermi",
-        "egap",
-        "emin",
-        "emax",
-        "homo",
-        "lumo",
-        "homo_filling",
-        "lumo_filling",
-        "is_metal",
-    ]
-    efermi: float = None
-    egap: float = None
-    emin: float = None
-    emax: float = None
-    homo: float = None
-    lumo: float = None
-    homo_filling: float = None
-    lumo_filling: float = None
-    is_metal: bool = None
-    etype: str = None
-
-    broadening_type: str = None
-    broadening: float = None
-    kgrid: list = None
-    truncation_type: str = None
-    truncation_radius: float = None
-    pwcut: float = None
-    rhocut: float = None
-
-    pp_type: str = None
-    total_electrons: float = None
-    semicore_electrons: int = None
-    valence_electrons: float = None
-    total_electrons_uncharged: int = None
-    semicore_electrons_uncharged: int = None
-    valence_electrons_uncharged: int = None
-    Nbands: int = None
-
-    atom_elements: list = None
-    atom_elements_int: list = None
-    atom_types: list = None
-    spintype: str = None
-    nspin: int = None
-    nat: int = None
-    atom_coords_initial: list[list[float]] = None
-    atom_coords_final: list[list[float]] = None
-    atom_coords: list[list[float]] = None
-
-    has_solvation: bool = False
-    fluid: str = None
-    is_gc: bool = None
 
     @classmethod
     def from_file(cls, file_path: str) -> JDFTXOutfile:
+        """Return JDFTXOutfile object.
+
+        Create a JDFTXOutfile object from a JDFTx out file.
+
+        Parameters
+        ----------
+        file_path: str
+            The path to the JDFTx out file
+
+        Returns
+        -------
+        instance: JDFTXOutfile
+            The JDFTXOutfile object
+        """
         texts = read_outfile_slices(file_path)
-        slices = []
-        for text in texts:
-            slices.append(JDFTXOutfileSlice.from_out_slice(text))
-        instance = cls.from_out_slice(texts[-1])
+        slices = [JDFTXOutfileSlice.from_out_slice(text) for text in texts]
+        instance = cls()
         instance.slices = slices
         return instance
 
-    def __getitem__(self, key: int | str):
-        if type(key) is int:
-            return self.slices[key]
-        if type(key) is str:
-            return getattr(self, key)
+    def __getitem__(self, key: int | str) -> JDFTXOutfileSlice | Any:
+        """Return item.
 
-    def __len__(self):
+        Return the value of an item.
+
+        Parameters
+        ----------
+        key: int | str
+            The key of the item
+
+        Returns
+        -------
+        val
+            The value of the item
+        """
+        val = None
+        if type(key) is int:
+            val = self.slices[key]
+        elif type(key) is str:
+            val = getattr(self, key)
+        else:
+            raise TypeError(f"Invalid key type: {type(key)}")
+        return val
+
+    def __len__(self) -> int:
+        """Return length of JDFTXOutfile object.
+
+        Returns the number of JDFTx calls in the
+        JDFTXOutfile object.
+
+        Returns
+        -------
+        length: int
+            The number of geometric optimization steps in the JDFTXOutfile
+            object
+        """
         return len(self.slices)
