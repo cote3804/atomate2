@@ -117,8 +117,6 @@ class JDFTXInfile(dict, MSONable):
         for tag_group in MASTER_TAG_LIST:
             added_tag_in_group = False
             for tag in MASTER_TAG_LIST[tag_group]:
-                if tag == "fluid-solvent":
-                    print("here")
                 if tag not in self:
                     continue
                 if tag in __WANNIER_TAGS__:
@@ -179,7 +177,22 @@ class JDFTXInfile(dict, MSONable):
             return instance
 
     @staticmethod
-    def _preprocess_line(line):
+    def _preprocess_line(line: str) -> tuple[Any, str, str]:
+        """Preprocess a line from a JDFTXInfile.
+        
+        Preprocess a line from a JDFTXInfile, splitting it into a tag object, 
+        tag name, and value.
+
+        Parameters
+        ----------
+        line : str
+            Line from the input file.
+
+        Returns
+        -------
+        tuple[Any, str, str]
+            Tag object, tag name, and value.
+        """
         line = line.strip().split(maxsplit=1)
         tag: str = line[0].strip()
         if tag in __PHONON_TAGS__:
@@ -191,9 +204,9 @@ class JDFTXInfile(dict, MSONable):
                 f"The {tag} tag in {line} is not in MASTER_TAG_LIST and is not a comment, something is wrong with this input data!"
             )
         tag_object = get_tag_object(tag)
-
+        value: str = ""
         if len(line) == 2:
-            value: Any = line[1].strip()
+            value = line[1].strip()
         elif len(line) == 1:
             value = (
                 ""  # exception for tags where only tagname is used, e.g. dump-only tag
@@ -206,8 +219,10 @@ class JDFTXInfile(dict, MSONable):
         return tag_object, tag, value
 
     @staticmethod
-    def _store_value(params, tag_object, tag, value):
-
+    def _store_value(
+        params: dict, tag_object: Any, tag: str, value: Any
+        ) -> dict: # I do not love setting value to Any, are there any existing instances where Any is not
+        # a dict, str, float, or int?
         if tag_object.can_repeat:  # store tags that can repeat in a list
             if tag not in params:
                     params[tag] = []
@@ -237,10 +252,27 @@ class JDFTXInfile(dict, MSONable):
         return params
 
     @staticmethod
-    def _gather_tags(lines):
-        # gather all tags broken across lines into single string for processing later
+    def _gather_tags(lines: list[str]) -> list[str]:
+        """ Gather broken lines into single string for processing later.
+
+        Gather all tags broken across lines into single string for processing 
+        later.
+
+        Parameters
+        ----------
+        lines : list[str]
+            List of lines from the input file.
+
+        Returns
+        -------
+        gathered_strings : list[str]
+            List of strings with tags broken across lines combined into single
+            string.
+        """
+        # gather all tags broken across lines into single string for processing 
+        # later
         total_tag = ""
-        gathered_string = []
+        gathered_strings = []
         for line in lines:
             if line[-1] == "\\":  # then tag is continued on next line
                 total_tag += (
@@ -248,16 +280,22 @@ class JDFTXInfile(dict, MSONable):
                 )  # remove \ and any extra whitespace
             elif total_tag:  # then finished with line continuations
                 total_tag += line
-                gathered_string.append(total_tag)
+                gathered_strings.append(total_tag)
                 total_tag = ""
             else:  # then append line like normal
-                gathered_string.append(line)
-        return gathered_string
+                gathered_strings.append(line)
+        return gathered_strings
 
     @property
-    def structure(self):
-        """
-        return a pymatgen Structure object
+    def structure(self) -> Structure:
+        """ Return a pymatgen Structure object.
+
+        Return a pymatgen Structure object.
+
+        Returns
+        -------
+        structure : pymatgen.Structure
+            Pymatgen structure object.
         """
         jdftstructure = self.to_pmg_structure()
         structure = jdftstructure.structure
@@ -265,7 +303,8 @@ class JDFTXInfile(dict, MSONable):
 
     @classmethod
     def from_str(
-        cls, string: str, dont_require_structure: bool = False, sort_tags: bool = True, path_parent: str = None
+        cls, string: str, dont_require_structure: bool = False,
+        sort_tags: bool = True, path_parent: str = None
     ) -> Self:
         """Read an JDFTXInfile object from a string.
 
@@ -364,8 +403,8 @@ class JDFTXInfile(dict, MSONable):
         return not flag
 
     @classmethod
-    def get_list_representation(cls, JDFTXInfile):
-        reformatted_params = deepcopy(JDFTXInfile.as_dict(skip_module_keys=True))
+    def get_list_representation(cls, jdftxinfile: JDFTXInfile):
+        reformatted_params = deepcopy(jdftxinfile.as_dict(skip_module_keys=True))
         # rest of code assumes lists are lists and not np.arrays
         reformatted_params = {
             k: v.tolist() if isinstance(v, np.ndarray) else v
@@ -381,8 +420,8 @@ class JDFTXInfile(dict, MSONable):
         return cls(reformatted_params)
 
     @classmethod
-    def get_dict_representation(cls, JDFTXInfile): # as list issue not resolved in reformatted_params - should it be? OR is that supposed to be resolved in the later lines?
-        reformatted_params = deepcopy(JDFTXInfile.as_dict(skip_module_keys=True))
+    def get_dict_representation(cls, jdftxinfile: JDFTXInfile): # as list issue not resolved in reformatted_params - should it be? OR is that supposed to be resolved in the later lines?
+        reformatted_params = deepcopy(jdftxinfile.as_dict(skip_module_keys=True))
         # Just to make sure only passing lists and no more numpy arrays
         reformatted_params = {
             k: v.tolist() if isinstance(v, np.ndarray) else v
