@@ -1,3 +1,8 @@
+"""Module containing reference data for JDFTx.
+
+This module contains reference data for JDFTx.
+"""
+
 atom_valence_electrons = {
     "H": 1,
     "He": 2,

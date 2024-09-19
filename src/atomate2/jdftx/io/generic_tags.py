@@ -1452,17 +1452,6 @@ class MultiformatTag(AbstractTag):
             "This method is not supposed to be called\
                                   directonly on MultiformatTag objects!"
         )
-        # min_token_len = int(self.write_tagname)  # length of value subtags
-        # # added next
-        # for subtag_type in self.subtags.values():
-        #     subtag_token_len = (
-        #         subtag_type.get_token_len()
-        #     )  # recursive for nested TagContainers
-        #     if (
-        #         not subtag_type.optional
-        #     ):  # TagContainers could be longer with optional subtags included
-        #         min_token_len += subtag_token_len
-        # return min_token_len
 
 
 @dataclass
