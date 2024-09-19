@@ -1,5 +1,16 @@
-from atomate2.jdftx.io.generic_tags import BoolTag, FloatTag, IntTag, StrTag, TagContainer
+"""Module for containing reference data for JDFTx tags.
 
+This module contains reference data for JDFTx tags, such as valid options for
+functionals, pseudopotentials, etc.
+"""
+
+from atomate2.jdftx.io.generic_tags import (
+    BoolTag,
+    FloatTag,
+    IntTag,
+    StrTag,
+    TagContainer,
+)
 
 func_options = [
     "gga",  # Perdew-Burke-Ernzerhof GGA
@@ -9,8 +20,10 @@ func_options = [
     "Hartree-Fock",  # Full exact exchange with no correlation
     # "hyb-HSE06",  # HSE06 'wPBEh' hybrid with 1/4 screened exact exchange
     # ^ Commented out due to bug in JDFTx, use (hyb-gga-HSE06) instead
-    "hyb-HSE12",  # Reparametrized screened exchange functional for accuracy (w=0.185 A^-1 and a=0.313)
-    "hyb-HSE12s",  # Reparametrized screened exchange functional for k-point convergence (w=0.408 A^-1 and a=0.425)
+    "hyb-HSE12",  # Reparametrized screened exchange functional for accuracy
+    # (w=0.185 A^-1 and a=0.313)
+    "hyb-HSE12s",  # Reparametrized screened exchange functional for k-point
+    # convergence (w=0.408 A^-1 and a=0.425)
     "hyb-PBE0",  # Hybrid PBE with 1/4 exact exchange
     "lda",  # Perdew-Zunger LDA
     "lda-PW",  # Perdew-Wang LDA
@@ -21,7 +34,7 @@ func_options = [
     "mgga-revTPSS",  # revised Tao-Perdew-Staroverov-Scuseria meta GGA
     "mgga-TPSS",  # Tao-Perdew-Staroverov-Scuseria meta GGA
     "orb-GLLBsc",  # Orbital-dependent GLLB-sc potential (no total energy)
-    "pot-LB94"  # van Leeuwen-Baerends model potential (no total energy)
+    "pot-LB94",  # van Leeuwen-Baerends model potential (no total energy)
 ]
 
 func_x_options = [
@@ -48,15 +61,17 @@ func_x_options = [
     "gga-x-chachiyo",  # Chachiyo exchange
     "gga-x-dk87-r1",  # dePristo & Kress 87 version R1
     "gga-x-dk87-r2",  # dePristo & Kress 87 version R2
-    "gga-x-eb88",  # Non-empirical (excogitated) B88 functional of Becke and Elliott
+    "gga-x-eb88",  # Non-empirical (excogitated) B88 functional of Becke and
+    # Elliott
     "gga-x-ecmv92",  # Engel, Chevary, Macdonald and Vosko
     "gga-x-ev93",  # Engel and Vosko
-    "gga-x-fd-lb94",  # Functional derivative recovered from the stray LB94 potential
+    "gga-x-fd-lb94",  # Functional derivative recovered from the stray LB94
+    # potential
     "gga-x-fd-revlb94",  # Revised FD_LB94
     "gga-x-ft97-a",  # Filatov & Thiel 97 (version A)
     "gga-x-ft97-b",  # Filatov & Thiel 97 (version B)
     "gga-x-g96",  # Gill 96
-    "gga-x-gam",  # Minnesota GAM exhange functional
+    "gga-x-gam",  # Minnesota GAM exchange functional
     "gga-x-gg99",  # Gilbert and Gill 1999
     "gga-x-hcth-a",  # HCTH-A
     "gga-x-herman",  # Herman Xalphabeta GGA
@@ -88,14 +103,17 @@ func_x_options = [
     "gga-x-ncap",  # Nearly correct asymptotic potential
     "gga-x-ncapr",  # Nearly correct asymptotic potential revised
     "gga-x-ol2",  # Exchange form based on Ou-Yang and Levy v.2
-    "gga-x-optb86b-vdw",  # Becke 86 reoptimized for use with vdW functional of Dion et al
+    "gga-x-optb86b-vdw",  # Becke 86 reoptimized for use with vdW functional
+    # of Dion et al
     "gga-x-optb88-vdw",  # opt-Becke 88 for vdW
     "gga-x-optpbe-vdw",  # Reparametrized PBE for vdW
     "gga-x-optx",  # Handy & Cohen OPTX 01
     "gga-x-pbe",  # Perdew, Burke & Ernzerhof
-    "gga-x-pbe-gaussian",  # Perdew, Burke & Ernzerhof with parameter values used in Gaussian
+    "gga-x-pbe-gaussian",  # Perdew, Burke & Ernzerhof with parameter values
+    # used in Gaussian
     "gga-x-pbe-jsjr",  # Reparametrized PBE by Pedroza, Silva & Capelle
-    "gga-x-pbe-mod",  # Perdew, Burke & Ernzerhof with less precise value for beta
+    "gga-x-pbe-mod",  # Perdew, Burke & Ernzerhof with less precise value for
+    # beta
     "gga-x-pbe-mol",  # Reparametrized PBE by del Campo, Gazquez, Trickey & Vela
     "gga-x-pbe-r",  # Revised PBE from Zhang & Yang
     "gga-x-pbe-sol",  # Perdew, Burke & Ernzerhof SOL
@@ -105,7 +123,8 @@ func_x_options = [
     "gga-x-pbeint",  # PBE for hybrid interfaces
     "gga-x-pbek1-vdw",  # Reparametrized PBE for vdW
     "gga-x-pbepow",  # PBE power
-    "gga-x-pbetrans",  # Gradient-regulated connection-based correction for the PBE exchange
+    "gga-x-pbetrans",  # Gradient-regulated connection-based correction for the
+    # PBE exchange
     "gga-x-pw86",  # Perdew & Wang 86
     "gga-x-pw91",  # Perdew & Wang 91
     "gga-x-pw91-mod",  # PW91, alternate version with more digits
@@ -158,9 +177,11 @@ func_c_options = [
     "gga-c-p86",  # Perdew 86
     "gga-c-p86-ft",  # Perdew 86 with more accurate value for ftilde
     "gga-c-p86vwn",  # Perdew 86 based on VWN5 correlation
-    "gga-c-p86vwn-ft",  # Perdew 86 based on VWN5 correlation, with more accurate value for ftilde
+    "gga-c-p86vwn-ft",  # Perdew 86 based on VWN5 correlation, with more
+    # accurate value for ftilde
     "gga-c-pbe",  # Perdew, Burke & Ernzerhof
-    "gga-c-pbe-gaussian",  # Perdew, Burke & Ernzerhof with parameters from Gaussian
+    "gga-c-pbe-gaussian",  # Perdew, Burke & Ernzerhof with parameters from
+    # Gaussian
     "gga-c-pbe-jrgx",  # Reparametrized PBE by Pedroza, Silva & Capelle
     "gga-c-pbe-mol",  # Reparametrized PBE by del Campo, Gazquez, Trickey & Vela
     "gga-c-pbe-sol",  # Perdew, Burke & Ernzerhof SOL
@@ -190,15 +211,17 @@ func_c_options = [
     "gga-c-zpbeint",  # spin-dependent gradient correction to PBEint
     "gga-c-zpbesol",  # spin-dependent gradient correction to PBEsol
     "gga-c-zvpbeint",  # another spin-dependent correction to PBEint
-    "gga-c-zvpbeloc",  # PBEloc variation with enhanced compatibility with exact exchange
+    "gga-c-zvpbeloc",  # PBEloc variation with enhanced compatibility with
+    # exact exchange
     "gga-c-zvpbesol",  # another spin-dependent correction to PBEsol
     "lda-c-1d-csc",  # Casula, Sorella & Senatore
-    "lda-c-1d-loos",  # P-F Loos correlation LDA
+    "lda-c-1d-loos",  # P-F _Loos correlation LDA
     "lda-c-2d-amgb",  # AMGB (for 2D systems)
     "lda-c-2d-prm",  # PRM (for 2D systems)
     "lda-c-br78",  # Brual & Rothstein 78
     "lda-c-chachiyo",  # Chachiyo simple 2 parameter correlation
-    "lda-c-chachiyo-mod",  # Chachiyo simple 2 parameter correlation with modified spin scaling
+    "lda-c-chachiyo-mod",  # Chachiyo simple 2 parameter correlation with
+    # modified spin scaling
     "lda-c-gk72",  # Gordon and Kim 1972
     "lda-c-gl",  # Gunnarson & Lundqvist
     "lda-c-gombas",  # Gombas
@@ -231,18 +254,21 @@ func_c_options = [
     "lda-c-vwn-3",  # Vosko, Wilk & Nusair (VWN3)
     "lda-c-vwn-4",  # Vosko, Wilk & Nusair (VWN4)
     "lda-c-vwn-rpa",  # Vosko, Wilk & Nusair (VWN5_RPA)
-    "lda-c-w20",  # Xie, Wu, and Zhao interpolation ansatz without fitting parameters
+    "lda-c-w20",  # Xie, Wu, and Zhao interpolation ansatz without fitting
+    # parameters
     "lda-c-wigner",  # Wigner
     "lda-c-xalpha",  # Slater's Xalpha
     "mgga-c-b88",  # Meta-GGA correlation by Becke
     "mgga-c-b94",  # Becke 1994 meta-GGA correlation
     "mgga-c-bc95",  # Becke correlation 95
-    "mgga-c-cc",  # Self-interaction corrected correlation functional by Schmidt et al
+    "mgga-c-cc",  # Self-interaction corrected correlation functional by
+    # Schmidt et al
     "mgga-c-ccalda",  # Iso-orbital corrected LDA correlation by Lebeda et al
     "mgga-c-cs",  # Colle and Salvetti
     "mgga-c-dldf",  # Dispersionless Density Functional
-    "mgga-c-hltapw",  # Half-and-half meta-LDAized PW correlation by Lehtola and Marques
-    "mgga-c-kcis",  # Krieger, Chen, Iafrate, and Savin
+    "mgga-c-hltapw",  # Half-and-half meta-LDAized PW correlation by Lehtola
+    # and Marques
+    "mgga-c-kcis",  # Krieger, Chen, Iafrate, and _Savin
     "mgga-c-kcisk",  # Krieger, Chen, and Kurth
     "mgga-c-m05",  # Minnesota M05 correlation functional
     "mgga-c-m05-2x",  # Minnesota M05-2X correlation functional
@@ -261,8 +287,10 @@ func_c_options = [
     "mgga-c-mn15-l",  # Minnesota MN15-L correlation functional
     "mgga-c-pkzb",  # Perdew, Kurth, Zupan, and Blaha
     "mgga-c-r2scan",  # Re-regularized SCAN correlation by Furness et al
-    "mgga-c-r2scan01",  # Re-regularized SCAN correlation with larger value for eta
-    "mgga-c-r2scanl",  # Deorbitalized re-regularized SCAN (r2SCAN-L) correlation
+    "mgga-c-r2scan01",  # Re-regularized SCAN correlation with larger value for
+    # eta
+    "mgga-c-r2scanl",  # Deorbitalized re-regularized SCAN (r2SCAN-L)
+    # correlation
     "mgga-c-revm06",  # Revised Minnesota M06 correlation functional
     "mgga-c-revm06-l",  # Minnesota revM06-L correlation functional
     "mgga-c-revm11",  # Revised Minnesota M11 correlation functional
@@ -271,7 +299,8 @@ func_c_options = [
     "mgga-c-revtm",  # revised Tao and Mo 2016 exchange
     "mgga-c-revtpss",  # revised TPSS correlation
     "mgga-c-rmggac",  # Revised correlation energy for MGGAC exchange functional
-    "mgga-c-rppscan",  # r++SCAN: rSCAN with uniform density limit and coordinate scaling behavior
+    "mgga-c-rppscan",  # r++SCAN: rSCAN with uniform density limit and
+    # coordinate scaling behavior
     "mgga-c-rregtm",  # Revised regTM correlation by Jana et al
     "mgga-c-rscan",  # Regularized SCAN correlation by Bartok and Yates
     "mgga-c-scan",  # SCAN correlation of Sun, Ruzsinszky, and Perdew
@@ -282,7 +311,8 @@ func_c_options = [
     "mgga-c-scanl-vv10",  # SCAN-L + VV10 correlation
     "mgga-c-tm",  # Tao and Mo 2016 correlation
     "mgga-c-tpss",  # Tao, Perdew, Staroverov & Scuseria
-    "mgga-c-tpss-gaussian",  # Tao, Perdew, Staroverov & Scuseria with parameters from Gaussian
+    "mgga-c-tpss-gaussian",  # Tao, Perdew, Staroverov & Scuseria with
+    # parameters from Gaussian
     "mgga-c-tpssloc",  # Semilocal dynamical correlation
     "mgga-c-vsxc",  # VSXC (correlation part)
 ]
@@ -351,15 +381,19 @@ func_xc_options = [
     "hyb-gga-cam-b3lyp",  # CAM version of B3LYP
     "hyb-gga-cam-o3lyp",  # CAM-O3LYP
     "hyb-gga-cam-pbeh",  # CAM hybrid screened exchange PBE version
-    "hyb-gga-cam-qtp-00",  # CAM-B3LYP retuned using ionization potentials of water
-    "hyb-gga-cam-qtp-01",  # CAM-B3LYP retuned using ionization potentials of water
-    "hyb-gga-cam-qtp-02",  # CAM-B3LYP retuned using ionization potentials of water
+    "hyb-gga-cam-qtp-00",  # CAM-B3LYP re-tuned using ionization potentials of
+    # water
+    "hyb-gga-cam-qtp-01",  # CAM-B3LYP re-tuned using ionization potentials of
+    # water
+    "hyb-gga-cam-qtp-02",  # CAM-B3LYP re-tuned using ionization potentials of
+    # water
     "hyb-gga-camh-b3lyp",  # CAM version of B3LYP, tuned for TDDFT
     "hyb-gga-camy-b3lyp",  # CAMY version of B3LYP
     "hyb-gga-camy-blyp",  # CAMY version of BLYP
     "hyb-gga-camy-pbeh",  # CAMY hybrid screened exchange PBE version
     "hyb-gga-cap0",  # Correct Asymptotic Potential hybrid
-    "hyb-gga-case21",  # CASE21: Constrained And Smoothed semi-Empirical 2021 functional
+    "hyb-gga-case21",  # CASE21: Constrained And Smoothed semi-Empirical 2021
+    # functional
     "hyb-gga-edf2",  # EDF2
     "hyb-gga-hapbe",  # Hybrid based in APBE and zvPBEloc
     "hyb-gga-hflyp",  # HF + LYP correlation
@@ -374,23 +408,32 @@ func_xc_options = [
     "hyb-gga-hse12",  # HSE12
     "hyb-gga-hse12s",  # HSE12 (short-range version)
     "hyb-gga-kmlyp",  # Kang-Musgrave hybrid
-    "hyb-gga-lb07",  # Livshits and Baer, empirical functional also used for IP tuning
+    "hyb-gga-lb07",  # Livshits and Baer, empirical functional also used for IP
+    # tuning
     "hyb-gga-lc-blyp",  # LC version of BLYP
     "hyb-gga-lc-blyp-ea",  # LC version of BLYP for electron affinities
-    "hyb-gga-lc-blypr",  # LC version of BLYP with correlation only in the short range
+    "hyb-gga-lc-blypr",  # LC version of BLYP with correlation only in the
+    # short range
     "hyb-gga-lc-bop",  # LC version of B88
     "hyb-gga-lc-pbeop",  # LC version of PBE
-    "hyb-gga-lc-qtp",  # CAM-B3LYP retuned using ionization potentials of water
+    "hyb-gga-lc-qtp",  # CAM-B3LYP re-tuned using ionization potentials of water
     "hyb-gga-lc-vv10",  # Vydrov and Van Voorhis
-    "hyb-gga-lc-wpbe",  # Long-range corrected PBE (LC-wPBE) by Vydrov and Scuseria
-    "hyb-gga-lc-wpbe-whs",  # Long-range corrected PBE (LC-wPBE) by Weintraub, Henderson and Scuseria
-    "hyb-gga-lc-wpbe08-whs",  # Long-range corrected PBE (LC-wPBE) by Weintraub, Henderson and Scuseria
-    "hyb-gga-lc-wpbeh-whs",  # Long-range corrected short-range hybrid PBE (LC-wPBE) by Weintraub, Henderson and Scuseria
-    "hyb-gga-lc-wpbesol-whs",  # Long-range corrected PBE (LC-wPBE) by Weintraub, Henderson and Scuseria
+    "hyb-gga-lc-wpbe",  # Long-range corrected PBE (LC-wPBE) by Vydrov and
+    # Scuseria
+    "hyb-gga-lc-wpbe-whs",  # Long-range corrected PBE (LC-wPBE) by Weintraub,
+    # Henderson and Scuseria
+    "hyb-gga-lc-wpbe08-whs",  # Long-range corrected PBE (LC-wPBE) by Weintraub,
+    # Henderson and Scuseria
+    "hyb-gga-lc-wpbeh-whs",  # Long-range corrected short-range hybrid PBE
+    # (LC-wPBE) by Weintraub, Henderson and Scuseria
+    "hyb-gga-lc-wpbesol-whs",  # Long-range corrected PBE (LC-wPBE) by
+    # Weintraub, Henderson and Scuseria
     "hyb-gga-lcy-blyp",  # LCY version of BLYP
     "hyb-gga-lcy-pbe",  # LCY version of PBE
-    "hyb-gga-lrc-wpbe",  # Long-range corrected PBE (LRC-wPBE) by Rohrdanz, Martins and Herbert
-    "hyb-gga-lrc-wpbeh",  # Long-range corrected short-range hybrid PBE (LRC-wPBEh) by Rohrdanz, Martins and Herbert
+    "hyb-gga-lrc-wpbe",  # Long-range corrected PBE (LRC-wPBE) by Rohrdanz,
+    # Martins and Herbert
+    "hyb-gga-lrc-wpbeh",  # Long-range corrected short-range hybrid PBE
+    # (LRC-wPBEh) by Rohrdanz, Martins and Herbert
     "hyb-gga-mb3lyp-rc04",  # B3LYP with RC04 LDA
     "hyb-gga-mcam-b3lyp",  # Modified CAM-B3LYP by Day, Nguyen and Pachter
     "hyb-gga-mpw1k",  # mPW1K
@@ -411,7 +454,8 @@ func_xc_options = [
     "hyb-gga-pbeb0",  # PBEbeta0
     "hyb-gga-pbeh",  # PBEH (PBE0)
     "hyb-gga-qtp17",  # Global hybrid for vertical ionization potentials
-    "hyb-gga-rcam-b3lyp",  # Similar to CAM-B3LYP, but trying to reduce the many-electron self-interaction
+    "hyb-gga-rcam-b3lyp",  # Similar to CAM-B3LYP, but trying to reduce the
+    # many-electron self-interaction
     "hyb-gga-revb3lyp",  # Revised B3LYP
     "hyb-gga-sb98-1a",  # SB98 (1a)
     "hyb-gga-sb98-1b",  # SB98 (1b)
@@ -419,14 +463,16 @@ func_xc_options = [
     "hyb-gga-sb98-2a",  # SB98 (2a)
     "hyb-gga-sb98-2b",  # SB98 (2b)
     "hyb-gga-sb98-2c",  # SB98 (2c)
-    "hyb-gga-tuned-cam-b3lyp",  # CAM version of B3LYP, tuned for excitations and properties
+    "hyb-gga-tuned-cam-b3lyp",  # CAM version of B3LYP, tuned for excitations
+    # and properties
     "hyb-gga-wb97",  # wB97 range-separated functional
     "hyb-gga-wb97x",  # wB97X range-separated functional
     "hyb-gga-wb97x-d",  # wB97X-D range-separated functional
     "hyb-gga-wb97x-d3",  # wB97X-D3 range-separated functional
     "hyb-gga-wb97x-v",  # wB97X-V range-separated functional
     "hyb-gga-wc04",  # Hybrid fitted to carbon NMR shifts
-    "hyb-gga-whpbe0",  # Long-range corrected short-range hybrid PBE (whPBE0) by Shao et al
+    "hyb-gga-whpbe0",  # Long-range corrected short-range hybrid PBE (whPBE0)
+    # by Shao et al
     "hyb-gga-wp04",  # Hybrid fitted to proton NMR shifts
     "hyb-gga-x3lyp",  # X3LYP
     "hyb-lda-bn05",  # Baer and Neuhauser, gamma=1
@@ -448,7 +494,8 @@ func_xc_options = [
     "hyb-mgga-pbe1kcis",  # PBE1KCIS for binding energies
     "hyb-mgga-pw6b95",  # Mixture of PW91 with BC95 from Zhao and Truhlar
     "hyb-mgga-pw86b95",  # Mixture of PW86 with BC95
-    "hyb-mgga-pwb6k",  # Mixture of PW91 with BC95 from Zhao and Truhlar for kinetics
+    "hyb-mgga-pwb6k",  # Mixture of PW91 with BC95 from Zhao and Truhlar for
+    # kinetics
     "hyb-mgga-revtpssh",  # revTPSSh
     "hyb-mgga-tpss0",  # TPSS0 with 25% exact exchange
     "hyb-mgga-tpss1kcis",  # TPSS1KCIS for thermochemistry and kinetics
@@ -460,7 +507,7 @@ func_xc_options = [
     "lda-1d-ehwlrg-2",  # LDA constructed from slab-like systems of 2 electrons
     "lda-1d-ehwlrg-3",  # LDA constructed from slab-like systems of 3 electrons
     "lda-corrksdt",  # Corrected KSDT by Karasiev, Dufty and Trickey
-    "lda-gdsmfb",  # Groth, Dornheim, Sjostrom, Malone, Foulkes, Bonitz
+    "lda-gdsmfb",  # _Groth, Dornheim, Sjostrom, Malone, Foulkes, Bonitz
     "lda-ksdt",  # Karasiev, Sjostrom, Dufty & Trickey
     "lda-lp-a",  # Lee-Parr reparametrization A
     "lda-lp-b",  # Lee-Parr reparametrization B
@@ -478,27 +525,26 @@ func_xc_options = [
 ]
 
 
-
 JDFTXDumpFreqOptions = ["Electronic", "End", "Fluid", "Gummel", "Init", "Ionic"]
 JDFTXDumpVarOptions = [
     "BandEigs",  # Band Eigenvalues
-    "BandProjections",  # Projections of each band state against each 
+    "BandProjections",  # Projections of each band state against each
     # atomic orbital
-    "BandUnfold",  # Unfold band structure from supercell to unit cell 
+    "BandUnfold",  # Unfold band structure from supercell to unit cell
     # (see command band-unfold)
-    "Berry",  # Berry curvature i <dC/dk| X |dC/dk>, only allowed at End 
+    "Berry",  # Berry curvature i <dC/dk| X |dC/dk>, only allowed at End
     # (see command Cprime-params)
-    "BGW",  # G-space wavefunctions, density and potential for Berkeley GW 
+    "BGW",  # G-space wavefunctions, density and potential for Berkeley GW
     # (requires HDF5 support)
     "BoundCharge",  # Bound charge in the fluid
-    "BulkEpsilon",  # Dielectric constant of a periodic solid 
+    "BulkEpsilon",  # Dielectric constant of a periodic solid
     # (see command bulk-epsilon)
-    "ChargedDefect",  # Calculate energy correction for charged defect 
+    "ChargedDefect",  # Calculate energy correction for charged defect
     # (see command charged-defect)
-    "CoreDensity",  # Total core electron density 
+    "CoreDensity",  # Total core electron density
     # (from partial core corrections)
     "Dfluid",  # Electrostatic potential due to fluid alone
-    "Dipole",  # Dipole moment of explicit charges 
+    "Dipole",  # Dipole moment of explicit charges
     # (ionic and electronic)
     "Dn",  # First order change in electronic density
     "DOS",  # Density of States (see command density-of-states)
@@ -508,79 +554,79 @@ JDFTXDumpVarOptions = [
     "DVscloc",  # First order change in local self-consistent potential
     "DWfns",  # Perturbation Wavefunctions
     "Ecomponents",  # Components of the energy
-    "EigStats",  # Band eigenvalue statistics: 
+    "EigStats",  # Band eigenvalue statistics:
     # HOMO, LUMO, min, max and Fermi level
     "ElecDensity",  # Electronic densities (n or nup,ndn)
-    "ElecDensityAccum",  # Electronic densities (n or nup,ndn) 
+    "ElecDensityAccum",  # Electronic densities (n or nup,ndn)
     # accumulated over MD trajectory
-    "EresolvedDensity",  # Electron density from bands within 
+    "EresolvedDensity",  # Electron density from bands within
     # specified energy ranges
-    "ExcCompare",  # Energies for other exchange-correlation functionals 
+    "ExcCompare",  # Energies for other exchange-correlation functionals
     # (see command elec-ex-corr-compare)
-    "Excitations",  # Dumps dipole moments and transition strength 
+    "Excitations",  # Dumps dipole moments and transition strength
     # (electric-dipole) of excitations
     "FCI",  # Output Coulomb matrix elements in FCIDUMP format
-    "FermiDensity",  # Electron density from fermi-derivative at 
+    "FermiDensity",  # Electron density from fermi-derivative at
     # specified energy
-    "FermiVelocity",  # Fermi velocity, density of states at Fermi 
+    "FermiVelocity",  # Fermi velocity, density of states at Fermi
     # level and related quantities
     "Fillings",  # Fillings
     "FluidDebug",  # Fluid specific debug output if any
-    "FluidDensity",  # Fluid densities (NO,NH,nWater for explicit fluids, 
+    "FluidDensity",  # Fluid densities (NO,NH,nWater for explicit fluids,
     # cavity function for PCMs)
-    "Forces",  # Forces on the ions in the coordinate system selected by 
+    "Forces",  # Forces on the ions in the coordinate system selected by
     # command forces-output-coords
-    "Gvectors",  # List of G vectors in reciprocal lattice basis, 
+    "Gvectors",  # List of G vectors in reciprocal lattice basis,
     # for each k-point
     "IonicDensity",  # Nuclear charge density (with gaussians)
-    "IonicPositions",  # Ionic positions in the same format 
+    "IonicPositions",  # Ionic positions in the same format
     # (and coordinate system) as the input file
     "KEdensity",  # Kinetic energy density of the valence electrons
-    "Kpoints",  # List of reduced k-points in calculation, 
+    "Kpoints",  # List of reduced k-points in calculation,
     # and mapping to the unreduced k-point mesh
-    "L",  # Angular momentum matrix elements, only allowed at End 
+    "L",  # Angular momentum matrix elements, only allowed at End
     # (see command Cprime-params)
     "Lattice",  # Lattice vectors in the same format as the input file
-    "Momenta",  # Momentum matrix elements in a binary file 
+    "Momenta",  # Momentum matrix elements in a binary file
     # (indices outer to inner: state, cartesian direction, band1, band2)
     "None",  # Dump nothing
     "Ocean",  # Wave functions for Ocean code
-    "OrbitalDep",  # Custom output from orbital-dependent functionals 
+    "OrbitalDep",  # Custom output from orbital-dependent functionals
     # (eg. quasi-particle energies, discontinuity potential)
-    "Q",  # Quadrupole r*p matrix elements, only allowed at End 
+    "Q",  # Quadrupole r*p matrix elements, only allowed at End
     # (see command Cprime-params)
     "QMC",  # Blip'd orbitals and potential for CASINO [27]
-    "R",  # Position operator matrix elements, only allowed at End 
+    "R",  # Position operator matrix elements, only allowed at End
     # (see command Cprime-params)
     "RealSpaceWfns",  # Real-space wavefunctions (one column per file)
-    "RhoAtom",  # Atomic-orbital projected density matrices 
+    "RhoAtom",  # Atomic-orbital projected density matrices
     # (only for species with +U enabled)
-    "SelfInteractionCorrection",  # Calculates Perdew-Zunger self-interaction 
+    "SelfInteractionCorrection",  # Calculates Perdew-Zunger self-interaction
     # corrected Kohn-Sham eigenvalues
-    "SlabEpsilon",  # Local dielectric function of a slab 
+    "SlabEpsilon",  # Local dielectric function of a slab
     # (see command slab-epsilon)
-    "SolvationRadii",  # Effective solvation radii based on fluid bound charge 
+    "SolvationRadii",  # Effective solvation radii based on fluid bound charge
     # distribution
-    "Spin",  # Spin matrix elements from non-collinear calculations in a 
-    # binary file (indices outer to inner: state, cartesian direction, band1, 
+    "Spin",  # Spin matrix elements from non-collinear calculations in a
+    # binary file (indices outer to inner: state, cartesian direction, band1,
     # # band2)
-    "State",  # All variables needed to restart calculation: wavefunction and 
+    "State",  # All variables needed to restart calculation: wavefunction and
     # fluid state/fillings if any
-    "Stress",  # Dumps dE/dR_ij where R_ij is the i'th component of the 
+    "Stress",  # Dumps dE/dR_ij where R_ij is the i'th component of the
     # j'th lattice vector
-    "Symmetries",  # List of symmetry matrices (in covariant lattice 
+    "Symmetries",  # List of symmetry matrices (in covariant lattice
     # coordinates)
-    "Vcavity",  # Fluid cavitation potential on the electron density that 
+    "Vcavity",  # Fluid cavitation potential on the electron density that
     # determines the cavity
-    "Velocities",  # Diagonal momentum/velocity matrix elements in a binary 
+    "Velocities",  # Diagonal momentum/velocity matrix elements in a binary
     # file (indices outer to inner: state, band, cartesian direction)
     "VfluidTot",  # Total contribution of fluid to the electron potential
     "Vlocps",  # Local part of pseudopotentials
     "Vscloc",  # Self-consistent potential
-    "XCanalysis",  # Debug VW KE density, single-particle-ness and 
+    "XCanalysis",  # Debug VW KE density, single-particle-ness and
     # spin-polarzied Hartree potential
 ]
-# simple dictionaries deepcopied multiple times into MASTER_TAG_LIST later for 
+# simple dictionaries deepcopied multiple times into MASTER_TAG_LIST later for
 # different tags
 JDFTXMinimize_subtagdict = {
     "alphaTincreaseFactor": FloatTag(),
@@ -611,15 +657,15 @@ JDFTXMinimize_subtagdict = {
     "wolfeGradient": FloatTag(),
 }
 JDFTXFluid_subtagdict = {
-    'epsBulk': FloatTag(),
-    'epsInf': FloatTag(),
-    'epsLJ': FloatTag(),
-    'Nnorm': FloatTag(),
-    'pMol': FloatTag(),
-    'poleEl': TagContainer(
-        can_repeat = True,
+    "epsBulk": FloatTag(),
+    "epsInf": FloatTag(),
+    "epsLJ": FloatTag(),
+    "Nnorm": FloatTag(),
+    "pMol": FloatTag(),
+    "poleEl": TagContainer(
+        can_repeat=True,
         write_tagname=True,
-        subtags = {
+        subtags={
             "omega0": FloatTag(write_tagname=False, optional=False),
             "gamma0": FloatTag(write_tagname=False, optional=False),
             "A0": FloatTag(write_tagname=False, optional=False),
@@ -631,8 +677,7 @@ JDFTXFluid_subtagdict = {
     "quad_nBeta": FloatTag(),
     "quad_nGamma": FloatTag(),
     "representation": TagContainer(
-        subtags={"MuEps": FloatTag(), "Pomega": FloatTag(),
-                 "PsiAlpha": FloatTag()}
+        subtags={"MuEps": FloatTag(), "Pomega": FloatTag(), "PsiAlpha": FloatTag()}
     ),
     "Res": FloatTag(),
     "Rvdw": FloatTag(),
@@ -661,6 +706,5 @@ JDFTXFluid_subtagdict = {
     ),
     "sigmaBulk": FloatTag(),
     "tauNuc": FloatTag(),
-    "translation": StrTag(options=["ConstantSpline", "Fourier",
-                                   "LinearSpline"]),
+    "translation": StrTag(options=["ConstantSpline", "Fourier", "LinearSpline"]),
 }

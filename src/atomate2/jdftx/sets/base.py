@@ -22,10 +22,8 @@ if TYPE_CHECKING:
 
 _BASE_JDFTX_SET = loadfn(get_mod_path("atomate2.jdftx.sets") / "BaseJdftxSet.yaml")
 
-FILE_NAMES = {
-    "in": "init.in",
-    "out": "jdftx.out"
-}
+FILE_NAMES = {"in": "init.in", "out": "jdftx.out"}
+
 
 class JdftxInputSet(InputSet):
     """
@@ -83,7 +81,7 @@ class JdftxInputSet(InputSet):
         """
         directory = Path(directory)
         jdftxinput = JDFTXInfile.from_file(directory / "input.in")
-        jdftxstructure = jdftxinput.to_JDFTXStructure(jdftxinput)
+        jdftxstructure = jdftxinput.to_jdftxstructure(jdftxinput)
         return JdftxInputSet(jdftxinput=jdftxinput, jdftxstructure=jdftxstructure)
 
 
@@ -135,7 +133,6 @@ class JdftxInputGenerator(InputGenerator):
 def condense_jdftxinputs(
     jdftxinput: JDFTXInfile, jdftxstructure: JDFTXStructure
 ) -> JDFTXInfile:
-    
     """
     Function to combine a JDFTXInputs class with calculation
     settings and a JDFTxStructure that defines the structure
@@ -155,6 +152,5 @@ def condense_jdftxinputs(
             A JDFTXInfile that includes the calculation
             parameters and input structure.
     """
-
     condensed_inputs = jdftxinput + JDFTXInfile.from_str(jdftxstructure.get_str())
     return condensed_inputs

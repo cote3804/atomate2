@@ -1,27 +1,41 @@
+"""Master list of AbstractTag-type objects for JDFTx input file generation.
+
+This module contains;
+- MASTER_TAG_LIST: a dictionary mapping tag categories to dictionaries mapping
+    tag names to AbstractTag-type objects.
+- get_tag_object: a function that returns an AbstractTag-type object from
+    MASTER_TAG_LIST given a tag name.
+"""
+
+from collections.abc import Mapping
 from copy import deepcopy
+from typing import Any
 
 from atomate2.jdftx.io.jdftxinfile_ref_options import (
-    JDFTXFluid_subtagdict, JDFTXMinimize_subtagdict
-)
-
-from atomate2.jdftx.io.jdftxinfile_ref_options import (
-    JDFTXDumpFreqOptions, JDFTXDumpVarOptions, func_options,
-    func_x_options, func_c_options, 
+    JDFTXDumpFreqOptions,
+    JDFTXDumpVarOptions,
+    JDFTXFluid_subtagdict,
+    JDFTXMinimize_subtagdict,
+    func_c_options,
+    func_options,
+    func_x_options,
     func_xc_options,
 )
 
 from .generic_tags import (
-    BoolTag, StrTag, IntTag, FloatTag, TagContainer, MultiformatTag, 
-    BoolTagContainer, DumpTagContainer, InitMagMomTag
+    AbstractTag,
+    BoolTag,
+    BoolTagContainer,
+    DumpTagContainer,
+    FloatTag,
+    InitMagMomTag,
+    IntTag,
+    MultiformatTag,
+    StrTag,
+    TagContainer,
 )
 
-
-
-
-
-
-
-MASTER_TAG_LIST = {
+MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
     "extrafiles": {
         "include": StrTag(can_repeat=True),
     },
@@ -43,10 +57,10 @@ MASTER_TAG_LIST = {
             },
         ),
         "coords-type": StrTag(options=["Cartesian", "Lattice"]),
-        # TODO: change lattice tag into MultiformatTag for different 
+        # TODO: change lattice tag into MultiformatTag for different
         # symmetry options
         "lattice": TagContainer(
-            linebreak_Nth_entry=3,
+            linebreak_nth_entry=3,
             optional=False,
             allow_list_representation=True,
             subtags={
@@ -73,12 +87,9 @@ MASTER_TAG_LIST = {
                 "v": TagContainer(
                     allow_list_representation=True,
                     subtags={
-                        "vx0": FloatTag(write_tagname=False, optional=False, 
-                                        prec=12),
-                        "vx1": FloatTag(write_tagname=False, optional=False, 
-                                        prec=12),
-                        "vx2": FloatTag(write_tagname=False, optional=False, 
-                                        prec=12),
+                        "vx0": FloatTag(write_tagname=False, optional=False, prec=12),
+                        "vx1": FloatTag(write_tagname=False, optional=False, prec=12),
+                        "vx2": FloatTag(write_tagname=False, optional=False, prec=12),
                     },
                 ),
                 "moveScale": IntTag(write_tagname=False, optional=False),
@@ -107,7 +118,7 @@ MASTER_TAG_LIST = {
         "symmetries": StrTag(options=["automatic", "manual", "none"]),
         "symmetry-threshold": FloatTag(),
         "symmetry-matrix": TagContainer(
-            linebreak_Nth_entry=3,
+            linebreak_nth_entry=3,
             can_repeat=True,
             allow_list_representation=True,
             subtags={
@@ -134,8 +145,7 @@ MASTER_TAG_LIST = {
                 "k0": FloatTag(write_tagname=False, optional=False, prec=12),
                 "k1": FloatTag(write_tagname=False, optional=False, prec=12),
                 "k2": FloatTag(write_tagname=False, optional=False, prec=12),
-                "weight": FloatTag(write_tagname=False, optional=False, 
-                                   prec=12),
+                "weight": FloatTag(write_tagname=False, optional=False, prec=12),
             },
         ),
         "kpoint-folding": TagContainer(
@@ -151,8 +161,8 @@ MASTER_TAG_LIST = {
     "electronic": {
         "elec-ex-corr": MultiformatTag(
             format_options=[
-                # note that hyb-HSE06 has a bug in JDFTx and should not be 
-                # used and is excluded here use the LibXC version instead 
+                # note that hyb-HSE06 has a bug in JDFTx and should not be
+                # used and is excluded here use the LibXC version instead
                 # (hyb-gga-HSE06)
                 StrTag(
                     write_tagname=True,
@@ -160,24 +170,34 @@ MASTER_TAG_LIST = {
                 ),
                 TagContainer(
                     subtags={
-                        "funcX": StrTag(write_tagname=False, optional=False,
-                                        options=deepcopy(func_x_options)),
-                        "funcC": StrTag(write_tagname=False, optional=False,
-                                        options=deepcopy(func_c_options)),
+                        "funcX": StrTag(
+                            write_tagname=False,
+                            optional=False,
+                            options=deepcopy(func_x_options),
+                        ),
+                        "funcC": StrTag(
+                            write_tagname=False,
+                            optional=False,
+                            options=deepcopy(func_c_options),
+                        ),
                     }
                 ),
                 TagContainer(
                     subtags={
-                        "funcXC": StrTag(write_tagname=False, optional=False,
-                                         options=deepcopy(func_xc_options))}
+                        "funcXC": StrTag(
+                            write_tagname=False,
+                            optional=False,
+                            options=deepcopy(func_xc_options),
+                        )
+                    }
                 ),
             ]
         ),
         "elec-ex-corr-compare": MultiformatTag(
             can_repeat=True,
             format_options=[
-                # note that hyb-HSE06 has a bug in JDFTx and should not be used 
-                # and is excluded here use the LibXC version instead 
+                # note that hyb-HSE06 has a bug in JDFTx and should not be used
+                # and is excluded here use the LibXC version instead
                 # (hyb-gga-HSE06)
                 StrTag(
                     write_tagname=True,
@@ -185,10 +205,16 @@ MASTER_TAG_LIST = {
                 ),
                 TagContainer(
                     subtags={
-                        "funcX": StrTag(write_tagname=False, optional=False,
-                                        options=deepcopy(func_x_options)),
-                        "funcC": StrTag(write_tagname=False, optional=False,
-                                        options=deepcopy(func_c_options)),
+                        "funcX": StrTag(
+                            write_tagname=False,
+                            optional=False,
+                            options=deepcopy(func_x_options),
+                        ),
+                        "funcC": StrTag(
+                            write_tagname=False,
+                            optional=False,
+                            options=deepcopy(func_c_options),
+                        ),
                     }
                 ),
                 # TODO: add all XC options from here:
@@ -197,8 +223,12 @@ MASTER_TAG_LIST = {
                 # dominate this dictionary
                 TagContainer(
                     subtags={
-                        "funcXC": StrTag(write_tagname=False, optional=False,
-                                         options=deepcopy(func_xc_options))}
+                        "funcXC": StrTag(
+                            write_tagname=False,
+                            optional=False,
+                            options=deepcopy(func_xc_options),
+                        )
+                    }
                 ),
             ],
         ),
@@ -259,9 +289,8 @@ MASTER_TAG_LIST = {
             },
         ),
         "elec-n-bands": IntTag(),
-        "spintype": StrTag(options=["no-spin", "spin-orbit", "vector-spin",
-                                    "z-spin"]),
-        'initial-magnetic-moments': InitMagMomTag(),
+        "spintype": StrTag(options=["no-spin", "spin-orbit", "vector-spin", "z-spin"]),
+        "initial-magnetic-moments": InitMagMomTag(),
         "elec-initial-magnetization": TagContainer(
             subtags={
                 "M": FloatTag(write_tagname=False, optional=False),
@@ -272,7 +301,7 @@ MASTER_TAG_LIST = {
         "elec-initial-charge": FloatTag(),
         "converge-empty-states": BoolTag(),
         "band-unfold": TagContainer(
-            linebreak_Nth_entry=3,
+            linebreak_nth_entry=3,
             allow_list_representation=True,
             subtags={
                 "M00": IntTag(write_tagname=False, optional=False),
@@ -397,10 +426,8 @@ MASTER_TAG_LIST = {
                 "EcutTransverse": FloatTag(),
                 "computeRange": TagContainer(
                     subtags={
-                        "iqStart": FloatTag(write_tagname=False,
-                                            optional=False),
-                        "iqStop": FloatTag(write_tagname=False,
-                                           optional=False),
+                        "iqStart": FloatTag(write_tagname=False, optional=False),
+                        "iqStop": FloatTag(write_tagname=False, optional=False),
                     }
                 ),
             },
@@ -417,8 +444,8 @@ MASTER_TAG_LIST = {
     "truncation": {
         "coulomb-interaction": MultiformatTag(
             format_options=[
-                # note that the first 2 and last 2 TagContainers could be 
-                # combined, but keep separate so there is less ambiguity on 
+                # note that the first 2 and last 2 TagContainers could be
+                # combined, but keep separate so there is less ambiguity on
                 # formatting
                 TagContainer(
                     subtags={
@@ -432,8 +459,7 @@ MASTER_TAG_LIST = {
                 TagContainer(
                     subtags={
                         "truncationType": StrTag(
-                            options=["Spherical"], write_tagname=False,
-                            optional=False
+                            options=["Spherical"], write_tagname=False, optional=False
                         ),
                         "Rc": FloatTag(write_tagname=False),
                     }
@@ -455,8 +481,7 @@ MASTER_TAG_LIST = {
                 TagContainer(
                     subtags={
                         "truncationType": StrTag(
-                            options=["Cylindrical"], write_tagname=False,
-                            optional=False
+                            options=["Cylindrical"], write_tagname=False, optional=False
                         ),
                         "dir": StrTag(
                             options=["001", "010", "100"],
@@ -490,12 +515,10 @@ MASTER_TAG_LIST = {
         "wavefunction": MultiformatTag(
             format_options=[
                 TagContainer(
-                    subtags={"lcao": BoolTag(write_value=False,
-                                             optional=False)}
+                    subtags={"lcao": BoolTag(write_value=False, optional=False)}
                 ),
                 TagContainer(
-                    subtags={"random": BoolTag(write_value=False,
-                                               optional=False)}
+                    subtags={"random": BoolTag(write_value=False, optional=False)}
                 ),
                 TagContainer(
                     subtags={
@@ -529,15 +552,12 @@ MASTER_TAG_LIST = {
         "Vexternal": MultiformatTag(
             format_options=[
                 TagContainer(
-                    subtags={"filename": StrTag(write_value=False,
-                                                optional=False)}
+                    subtags={"filename": StrTag(write_value=False, optional=False)}
                 ),
                 TagContainer(
                     subtags={
-                        "filenameUp": StrTag(write_value=False,
-                                             optional=False),
-                        "filenameDn": StrTag(write_tagname=False,
-                                             optional=False),
+                        "filenameUp": StrTag(write_value=False, optional=False),
+                        "filenameDn": StrTag(write_tagname=False, optional=False),
                     }
                 ),
             ]
@@ -722,8 +742,7 @@ MASTER_TAG_LIST = {
                             ],
                             write_tagname=False,
                         ),
-                        "concentration": StrTag(options=["bulk"],
-                                                write_tagname=False),
+                        "concentration": StrTag(options=["bulk"], write_tagname=False),
                         "functional": StrTag(
                             options=[
                                 "BondedVoids",
@@ -741,8 +760,7 @@ MASTER_TAG_LIST = {
         "fluid-anion": TagContainer(
             subtags={
                 "name": StrTag(
-                    options=["Cl-", "ClO4-", "F-"], write_tagname=False,
-                    optional=False
+                    options=["Cl-", "ClO4-", "F-"], write_tagname=False, optional=False
                 ),
                 "concentration": FloatTag(write_tagname=False, optional=False),
                 "functional": StrTag(
@@ -839,8 +857,7 @@ MASTER_TAG_LIST = {
                 "energyScale": FloatTag(write_tagname=False, optional=False),
                 "lengthScale": FloatTag(write_tagname=False),
                 "FMixType": StrTag(
-                    options=["LJPotential", "GaussianKernel"],
-                    write_tagname=False
+                    options=["LJPotential", "GaussianKernel"], write_tagname=False
                 ),
             },
         ),
@@ -1051,8 +1068,7 @@ MASTER_TAG_LIST = {
                     can_repeat=True,
                     subtags={
                         "species": StrTag(write_tagname=False, optional=False),
-                        "atomIndex": IntTag(write_tagname=False,
-                                            optional=False),
+                        "atomIndex": IntTag(write_tagname=False, optional=False),
                         "r": FloatTag(write_tagname=False, optional=False),
                         "i0": FloatTag(write_tagname=False, optional=False),
                         "i1": FloatTag(write_tagname=False, optional=False),
@@ -1063,8 +1079,7 @@ MASTER_TAG_LIST = {
                     can_repeat=True,
                     subtags={
                         "species": StrTag(write_tagname=False, optional=False),
-                        "atomIndex": IntTag(write_tagname=False,
-                                            optional=False),
+                        "atomIndex": IntTag(write_tagname=False, optional=False),
                         "r": FloatTag(write_tagname=False, optional=False),
                     },
                 ),
@@ -1073,8 +1088,7 @@ MASTER_TAG_LIST = {
                     can_repeat=True,
                     subtags={
                         "species": StrTag(write_tagname=False, optional=False),
-                        "atomIndex": IntTag(write_tagname=False,
-                                            optional=False),
+                        "atomIndex": IntTag(write_tagname=False, optional=False),
                         "orbDesc": StrTag(write_tagname=False, optional=False),
                     },
                 ),
@@ -1082,8 +1096,7 @@ MASTER_TAG_LIST = {
                     can_repeat=True,
                     subtags={
                         "species": StrTag(write_tagname=False, optional=False),
-                        "atomIndex": IntTag(write_tagname=False,
-                                            optional=False),
+                        "atomIndex": IntTag(write_tagname=False, optional=False),
                         "orbDesc": StrTag(write_tagname=False, optional=False),
                     },
                 ),
@@ -1184,36 +1197,42 @@ MASTER_TAG_LIST = {
         ),
         "pcm-nonlinear-debug": TagContainer(
             subtags={
-                "linearDielectric": BoolTag(write_tagname=False,
-                                            optional=False),
-                "linearScreening": BoolTag(write_tagname=False,
-                                           optional=False),
+                "linearDielectric": BoolTag(write_tagname=False, optional=False),
+                "linearScreening": BoolTag(write_tagname=False, optional=False),
             }
         ),
     },
 }
 
 
-def get_dump_tag_container():
-    subtags = {}
+def get_dump_tag_container() -> DumpTagContainer:
+    """Initialize a dump tag container.
+
+    Returns
+    -------
+    DumpTagContainer
+        The dump tag container.
+    """
+    # subtags = {}
+    subtags: Mapping[str, BoolTagContainer] = {}
     for freq in JDFTXDumpFreqOptions:
         subsubtags = {}
         for var in JDFTXDumpVarOptions:
             subsubtags[var] = BoolTag(write_value=False)
+        # subtags[freq] = BoolTagContainer(
+        #     subtags=subsubtags, write_tagname=True, can_repeat=True
+        # )
         subtags[freq] = BoolTagContainer(
             subtags=subsubtags, write_tagname=True, can_repeat=True
         )
-    dump_tag_container = DumpTagContainer(
-        subtags=subtags, write_tagname=True, can_repeat=True
-    )
-    return dump_tag_container
+    return DumpTagContainer(subtags=subtags, write_tagname=True, can_repeat=True)
 
 
 MASTER_TAG_LIST["export"]["dump"] = get_dump_tag_container()
 
 
-__PHONON_TAGS__ = ["phonon"]
-__WANNIER_TAGS__ = [
+__PHONON_TAGS__: list[str] = ["phonon"]
+__WANNIER_TAGS__: list[str] = [
     "wannier",
     "wannier-center-pinned",
     "wannier-dump-name",
@@ -1221,13 +1240,33 @@ __WANNIER_TAGS__ = [
     "wannier-minimize",
     "defect-supercell",
 ]
-__TAG_LIST__ = [
-    tag for group in MASTER_TAG_LIST for tag in MASTER_TAG_LIST[group]
-]
+__TAG_LIST__ = [tag for group in MASTER_TAG_LIST for tag in MASTER_TAG_LIST[group]]
 __TAG_GROUPS__ = {
     tag: group for group in MASTER_TAG_LIST for tag in MASTER_TAG_LIST[group]
 }
 
 
-def get_tag_object(tag):
+def get_tag_object(tag: str) -> AbstractTag:
+    #     BoolTag |
+    #     BoolTagContainer |
+    #     DumpTagContainer |
+    #     FloatTag |
+    #     InitMagMomTag |
+    #     IntTag |
+    #     MultiformatTag |
+    #     StrTag |
+    #     TagContainer
+    # ):
+    """Get the tag object for a given tag name.
+
+    Parameters
+    ----------
+    tag : str
+        The tag name.
+
+    Returns
+    -------
+    AbstractTag
+        The tag object.
+    """
     return MASTER_TAG_LIST[__TAG_GROUPS__[tag]][tag]

@@ -1,8 +1,18 @@
 # import pytest
+
+from atomate2.jdftx.io.generic_tags import IntTag, TagContainer
 from atomate2.jdftx.io.jdftxinfile_master_format import *
-from atomate2.jdftx.io.jdftxinfile import JDFTXInfile
-from pathlib import Path
-import os
+
+dummy_tagcontainer = TagContainer(
+    allow_list_representation=True,
+    can_repeat=True,
+    subtags={
+        "s0": IntTag(write_tagname=False, optional=True),
+        "s1": IntTag(write_tagname=False, optional=True),
+        "s2": IntTag(write_tagname=False, optional=True),
+    },
+)
+dummy_tagcontainer.validate_value_type("s0", [[1]])
 
 
 # infile = Path(os.getcwd()) / "tests" / "jdftx" / "io" / "example_files" / "example_sp.in"

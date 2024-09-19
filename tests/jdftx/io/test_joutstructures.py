@@ -4,7 +4,7 @@ import pytest
 from pymatgen.core.units import Ha_to_eV
 from pytest import approx
 
-from atomate2.jdftx.io.joutstructures import JOutStructures
+from atomate2.jdftx.io.joutstructures import JOutStructure, JOutStructures
 
 ex_files_dir = Path(__file__).parents[0] / "example_files"
 ex_outslice_fname1 = ex_files_dir / "ex_out_slice_latmin"
@@ -62,22 +62,29 @@ def test_jstructures(
     ex_slice: list[str], ex_slice_known: dict[str, float], iter_type: str
 ):
     jstruct = JOutStructures.from_out_slice(ex_slice, iter_type=iter_type)
+    assert isinstance(jstruct, JOutStructures)
+    assert isinstance(jstruct[0], JOutStructure)
     assert jstruct[0].elecmindata[0].mu == approx(ex_slice_known["mu0_0"])
     assert jstruct[0].elecmindata[-1].mu == approx(ex_slice_known["mu0_-1"])
     assert jstruct[-1].elecmindata[0].mu == approx(ex_slice_known["mu-1_0"])
     assert jstruct[-1].elecmindata[-1].mu == approx(ex_slice_known["mu-1_-1"])
+    assert jstruct.elecmindata[-1].mu == approx(ex_slice_known["mu-1_-1"])
     assert jstruct[0].elecmindata[0].nelectrons == approx(ex_slice_known["nelec0_0"])
     assert jstruct[0].elecmindata[-1].nelectrons == approx(ex_slice_known["nelec0_-1"])
     assert jstruct[-1].elecmindata[0].nelectrons == approx(ex_slice_known["nelec-1_0"])
     assert jstruct[-1].elecmindata[-1].nelectrons == approx(
         ex_slice_known["nelec-1_-1"]
     )
+    assert jstruct.elecmindata[-1].nelectrons == approx(ex_slice_known["nelec-1_-1"])
     assert len(jstruct[0].elecmindata) == ex_slice_known["nEminSteps0"]
     assert len(jstruct[-1].elecmindata) == ex_slice_known["nEminSteps-1"]
+    assert len(jstruct.elecmindata) == ex_slice_known["nEminSteps-1"]
     assert jstruct[0].etype == ex_slice_known["etype0"]
     assert approx(ex_slice_known["E0"]) == jstruct[0].E
     assert jstruct[-1].etype == ex_slice_known["etype-1"]
+    assert jstruct.etype == ex_slice_known["etype-1"]
     assert approx(ex_slice_known["E-1"]) == jstruct[-1].E
     assert jstruct[0].elecmindata.converged == ex_slice_known["conv0"]
     assert jstruct[-1].elecmindata.converged == ex_slice_known["conv-1"]
+    assert jstruct.elecmindata.converged == ex_slice_known["conv-1"]
     assert len(jstruct) == ex_slice_known["nGeomSteps"]

@@ -9,6 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+import numpy as np
+
+from atomate2.jdftx.io.jeiters import JEiters
 from atomate2.jdftx.io.joutstructure import JOutStructure
 from atomate2.jdftx.io.joutstructure_helpers import (
     correct_iter_type,
@@ -142,6 +145,166 @@ class JOutStructures:
                 self._t_s = self[-1].t_s
         return self._t_s
 
+    ###########################################################################
+    # Properties inherited from most recent JOutStructure
+    ###########################################################################
+
+    @property
+    def etype(self) -> str:
+        """
+        Return etype from most recent JOutStructure.
+
+        Return etype from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].etype
+        raise AttributeError(
+            "Property etype inaccessible due to empty slices class field"
+        )
+
+    @property
+    def eiter_type(self) -> str:
+        """
+        Return eiter_type from most recent JOutStructure.
+
+        Return eiter_type from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].eiter_type
+        raise AttributeError(
+            "Property eiter_type inaccessible due to empty slices class field"
+        )
+
+    @property
+    def emin_flag(self) -> str:
+        """
+        Return emin_flag from most recent JOutStructure.
+
+        Return emin_flag from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].emin_flag
+        raise AttributeError(
+            "Property emin_flag inaccessible due to empty slices class field"
+        )
+
+    @property
+    def ecomponents(self) -> dict:
+        """
+        Return ecomponents from most recent JOutStructure.
+
+        Return ecomponents from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].ecomponents
+        raise AttributeError(
+            "Property ecomponents inaccessible due to empty slices class field"
+        )
+
+    @property
+    def elecmindata(self) -> JEiters:
+        """
+        Return elecmindata from most recent JOutStructure.
+
+        Return elecmindata from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].elecmindata
+        raise AttributeError(
+            "Property elecmindata inaccessible due to empty slices class field"
+        )
+
+    @property
+    def stress(self) -> np.ndarray:
+        """
+        Return stress from most recent JOutStructure.
+
+        Return stress from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].stress
+        raise AttributeError(
+            "Property stress inaccessible due to empty slices class field"
+        )
+
+    @property
+    def strain(self) -> np.ndarray:
+        """
+        Return strain from most recent JOutStructure.
+
+        Return strain from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].strain
+        raise AttributeError(
+            "Property strain inaccessible due to empty slices class field"
+        )
+
+    @property
+    def iter(self) -> int:
+        """
+        Return iter from most recent JOutStructure.
+
+        Return iter from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].iter
+        raise AttributeError(
+            "Property iter inaccessible due to empty slices class field"
+        )
+
+    @property
+    def E(self) -> float:
+        """
+        Return E from most recent JOutStructure.
+
+        Return E from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].E
+        raise AttributeError("Property E inaccessible due to empty slices class field")
+
+    @property
+    def grad_k(self) -> float:
+        """
+        Return grad_k from most recent JOutStructure.
+
+        Return grad_k from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].grad_k
+        raise AttributeError(
+            "Property grad_k inaccessible due to empty slices class field"
+        )
+
+    @property
+    def alpha(self) -> float:
+        """
+        Return alpha from most recent JOutStructure.
+
+        Return alpha from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].alpha
+        raise AttributeError(
+            "Property alpha inaccessible due to empty slices class field"
+        )
+
+    @property
+    def linmin(self) -> float:
+        """
+        Return linmin from most recent JOutStructure.
+
+        Return linmin from most recent JOutStructure.
+        """
+        if len(self.slices):
+            return self.slices[-1].linmin
+        raise AttributeError(
+            "Property linmin inaccessible due to empty slices class field"
+        )
+
+    ##
+
     def get_joutstructure_list(self, out_slice: list[str]) -> list[JOutStructure]:
         """Return list of JOutStructure objects.
 
@@ -154,18 +317,6 @@ class JOutStructures:
             A slice of a JDFTx out file (individual call of JDFTx)
         """
         out_bounds = get_step_bounds(out_slice)
-        # out_list = [
-        #     JOutStructure.from_text_slice(
-        #         out_slice[bounds[0] : bounds[1]], iter_type=self.iter_type
-        #     )
-        #     for bounds in out_bounds
-        # ]
-        # for bounds in out_bounds:
-        #     out_list.append(
-        #         JOutStructure.from_text_slice(
-        #             out_slice[bounds[0] : bounds[1]], iter_type=self.iter_type
-        #         )
-        #     )
         return [
             JOutStructure.from_text_slice(
                 out_slice[bounds[0] : bounds[1]], iter_type=self.iter_type
@@ -201,7 +352,7 @@ class JOutStructures:
             self.geom_converged = True
             self.geom_converged_reason = jst.geom_converged_reason
 
-    def __getatr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> Any:
         """Return attribute value.
 
         Return the value of an attribute.
@@ -216,11 +367,28 @@ class JOutStructures:
         value
             The value of the attribute
         """
-        if not hasattr(self, name):
+        if name not in self.__dict__:
             if not hasattr(self.slices[-1], name):
                 raise AttributeError(f"{self.__class__.__name__} not found: {name}")
             return getattr(self.slices[-1], name)
-        return getattr(self, name)
+        return self.__dict__[name]
+
+    def __dir__(self) -> list:
+        """List attributes.
+
+        Returns a list of attributes for the object, including those from self.slices[-1].
+
+        Returns
+        -------
+        list
+            A list of attribute names
+        """
+        # Get the default attributes
+        default_attrs = super().__dir__()
+        # Get the attributes from self.slices[-1]
+        slice_attrs = dir(self.slices[-1])
+        # Combine and return unique attributes
+        return list(set(default_attrs + slice_attrs))
 
     def __getitem__(self, key: int | str) -> JOutStructure | Any:
         """Return item.

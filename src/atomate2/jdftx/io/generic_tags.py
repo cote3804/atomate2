@@ -1,26 +1,18 @@
+from __future__ import annotations
+
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List
 
 import numpy as np
+from pymatgen.core import Structure
 
 __author__ = "Jacob Clary"
 
 
-# def flatten_list(tag: str, list_of_lists: List[Any]) -> List[Any]:
-#     """Flattens list of lists into a single list, then stops"""
-#     if not isinstance(list_of_lists, list):
-#         raise ValueError(f"{tag}: You must provide a list to flatten_list()!")
-#     while any([isinstance(x, list) for x in list_of_lists]):
-#         list_of_lists = sum(list_of_lists, [])
-#     return list_of_lists
-
-
 def flatten_list(tag: str, list_of_lists: List[Any]) -> List[Any]:
-    # Ben: I don't know what "then stops" means but I think this is how this
-    # function should work.
     """Flattens list of lists into a single list, then stops"""
     if not isinstance(list_of_lists, list):
         raise ValueError(f"{tag}: You must provide a list to flatten_list()!")
@@ -46,20 +38,23 @@ class ClassPrintFormatter:
 class AbstractTag(ClassPrintFormatter, ABC):
     """Abstract base class for all tags."""
 
-    multiline_tag: bool = False  # set to True if what to print tags across multiple lines, typically like electronic-minimize
+    multiline_tag: bool = False  # set to True if what to print tags across
+    # multiple lines, typically like electronic-minimize
     can_repeat: bool = (
         False  # set to True for tags that can appear on multiple lines, like ion
     )
     write_tagname: bool = (
-        True  # set to False to not print the tagname, like for subtags of elec-cutoff
+        True  # set to False to not print the tagname, like for subtags of
+        # elec-cutoff
     )
     write_value: bool = (
         True  # set to False to not print any value, like for dump-interval
     )
-    optional: bool = True  # set to False if tag (usually a subtag of a TagContainer) must be set for the JDFTXInfile to be valid
-    # the lattice, ion, and ion-species are the main tags that are not optional
+    optional: bool = True  # set to False if tag (usually a subtag of a
+    # TagContainer) must be set for the JDFTXInfile to be valid.
+    # The lattice, ion, and ion-species are the main tags that are not optional
     defer_until_struc: bool = False
-    _is_tag_container: bool = False
+    is_tag_container: bool = False
     allow_list_representation: bool = (
         False  # if True, allow this tag to exist as a list or list of lists
     )
@@ -89,7 +84,8 @@ class AbstractTag(ClassPrintFormatter, ABC):
         value : Any
             The value to check the type of.
         try_auto_type_fix : bool, optional
-            Whether to try to automatically fix the type of the value, by default False.
+            Whether to try to automatically fix the type of the value,
+            by default False.
 
         Returns
         -------
@@ -112,7 +108,7 @@ class AbstractTag(ClassPrintFormatter, ABC):
                     value = [self.read(tag, str(x)) for x in value]
                 else:
                     value = self.read(tag, str(value))
-                is_valid = self._validate_value_type(type_check, tag, value)
+                tag, is_valid, value = self._validate_value_type(type_check, tag, value)
             except Exception:
                 warnings.warn(
                     f"Could not fix the typing for {tag} {value}!", stacklevel=2
@@ -142,15 +138,27 @@ class AbstractTag(ClassPrintFormatter, ABC):
     def _get_token_len(self) -> int:
         return int(self.write_tagname) + int(self.write_value)
 
+    def get_list_representation(self, tag: str, value: Any) -> list | list[list]:
+        """Convert the value to a list representation."""
+        raise ValueError(f"Tag object has no get_list_representation method: \
+                         {tag}")
+
+    def get_dict_representation(self, tag: str, value: Any) -> dict | list[dict]:
+        """Convert the value to a dict representation."""
+        raise ValueError(f"Tag object has no get_dict_representation method: \
+                         {tag}")
+
 
 """
 TODO:
 fix dump-name and density-of-states tags
 
 check that all ions either have or lack velocities
-add validation of which tags require/forbid presence of other tags according to JDFTx docs?
+add validation of which tags require/forbid presence of other tags according to
+JDFTx docs?
 
-choose how DeferredTags inherit from TagContainer?? same functionality once process the values "for real"
+choose how DeferredTags inherit from TagContainer?? same functionality once
+process the values "for real"
 
 #possible TODO: add defaults like JDFTx does
 
@@ -165,61 +173,182 @@ MISC TODO:
 
 @dataclass(kw_only=True)
 class BoolTag(AbstractTag):
-    _TF_options = {
-        "read": {"yes": True, "no": False},
-        "write": {True: "yes", False: "no"},
-    }
+    """Tag for boolean values in JDFTx input files.
+
+    Tag for boolean values in JDFTx input files.
+    """
+
+    _TF_read_options: dict[str, bool] = field(
+        default_factory=lambda: {"yes": True, "no": False}
+    )
+    _TF_write_options: dict[bool, str] = field(
+        default_factory=lambda: {True: "yes", False: "no"}
+    )
+    _TF_options: dict[str, dict] = field(init=False)
+
+    def __post_init__(self):
+        self._TF_options = {
+            "read": self._TF_read_options,
+            "write": self._TF_write_options,
+        }
 
     def validate_value_type(
         self, tag: str, value: Any, try_auto_type_fix: bool = False
     ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the type of the value for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        tag : str
+            The tag to validate the type of the value for.
+        is_valid_out : bool
+            Whether the value is of the correct type.
+        updated_value : Any
+            The value checked against the correct type, possibly fixed.
+        """
         return self._validate_value_type(
             bool, tag, value, try_auto_type_fix=try_auto_type_fix
         )
 
     def read(self, tag: str, value: str) -> bool:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+
+        Returns
+        -------
+        bool
+        """
         if len(value.split()) > 1:
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
             if not self.write_value:
-                # accounts for exceptions where only the tagname is used, e.g. dump-only or dump-fermi-density (sometimes) tags
-                if not value:  # then the string '' was passed in because no value was provided but the tag was present
+                # accounts for exceptions where only the tagname is used, e.g.
+                # dump-only or dump-fermi-density (sometimes) tags
+                if not value:  # then the string '' was passed in because no
+                    # value was provided but the tag was present
                     value = "yes"
                 else:
                     raise ValueError(
-                        f"The value '{value}' was provided to {tag}, it is not acting like a boolean"
+                        f"The value '{value}' was provided to {tag}, it is not \
+                            acting like a boolean"
                     )
             return self._TF_options["read"][value]
         except:
             raise ValueError(f"Could not set '{value}' as True/False for {tag}!")
 
     def write(self, tag: str, value: Any) -> str:
-        value = self._TF_options["write"][value]
-        return self._write(tag, value)
+        """Write the tag and its value as a string.
+
+        Write the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+        """
+        value2 = self._TF_options["write"][value]
+        return self._write(tag, value2)
 
     def get_token_len(self) -> int:
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
         return self._get_token_len()
 
 
 @dataclass(kw_only=True)
 class StrTag(AbstractTag):
+    """Tag for string values in JDFTx input files.
+
+    Tag for string values in JDFTx input files.
+    """
+
     options: list = None
 
     def validate_value_type(
         self, tag, value, try_auto_type_fix: bool = False
     ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the type of the value for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        tag : str
+            The tag to validate the type of the value for.
+        is_valid_out : bool
+            Whether the value is of the correct type.
+        updated_value : Any
+            The value checked against the correct type, possibly fixed.
+        """
         return self._validate_value_type(
             str, tag, value, try_auto_type_fix=try_auto_type_fix
         )
 
     def read(self, tag: str, value: str) -> str:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+
+        Returns
+        -------
+        str
+        """
         if len(value.split()) > 1:
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
             value = str(value)
         except:
             raise ValueError(f"Could not set '{value}' to a str for {tag}!")
-
         if self.options is None or value in self.options:
             return value
         raise ValueError(
@@ -227,9 +356,34 @@ class StrTag(AbstractTag):
         )
 
     def write(self, tag: str, value) -> str:
+        """Write the tag and its value as a string.
+
+        Write the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+            The tag and its value as a string.
+        """
         return self._write(tag, value)
 
     def get_token_len(self) -> int:
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
         return self._get_token_len()
 
 
@@ -237,12 +391,50 @@ class StrTag(AbstractTag):
 class IntTag(AbstractTag):
     def validate_value_type(
         self, tag: str, value, try_auto_type_fix: bool = False
-    ) -> tuple:
+    ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the type of the value for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        tag : str
+            The tag to validate the type of the value for.
+        is_valid_out : bool
+            Whether the value is of the correct type.
+        updated_value : Any
+            The value checked against the correct type, possibly fixed.
+        """
         return self._validate_value_type(
             int, tag, value, try_auto_type_fix=try_auto_type_fix
         )
 
     def read(self, tag: str, value: str) -> int:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+
+        Returns
+        -------
+        int
+        """
         if len(value.split()) > 1:
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
@@ -251,22 +443,92 @@ class IntTag(AbstractTag):
             raise ValueError(f"Could not set '{value}' to a int for {tag}!")
 
     def write(self, tag: str, value) -> str:
+        """Write the tag and its value as a string.
+
+        Write the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+            The tag and its value as a string.
+        """
         return self._write(tag, value)
 
     def get_token_len(self) -> int:
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
         return self._get_token_len()
 
 
 @dataclass(kw_only=True)
 class FloatTag(AbstractTag):
-    prec: int = None
+    """Tag for float values in JDFTx input files.
 
-    def validate_value_type(self, tag, value, try_auto_type_fix: bool = False) -> tuple:
+    Tag for float values in JDFTx input files.
+    """
+
+    prec: int = field(default=None)
+
+    def validate_value_type(
+        self, tag, value, try_auto_type_fix: bool = False
+    ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the type of the value for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        tag : str
+            The tag to validate the type of the value for.
+        is_valid_out : bool
+            Whether the value is of the correct type.
+        updated_value : Any
+            The value checked against the correct type, possibly fixed.
+        """
         return self._validate_value_type(
             float, tag, value, try_auto_type_fix=try_auto_type_fix
         )
 
     def read(self, tag: str, value: str) -> float:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+
+        Returns
+        -------
+        float
+        """
         if len(value.split()) > 1:
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
@@ -275,6 +537,22 @@ class FloatTag(AbstractTag):
             raise ValueError(f"Could not set '{value}' to a float for {tag}!")
 
     def write(self, tag: str, value: Any) -> str:
+        """Write the tag and its value as a string.
+
+        Write the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+            The tag and its value as a string.
+        """
         # pre-convert to string: self.prec+3 is minimum room for:
         # - sign, 1 integer left of decimal, decimal, and precision.
         # larger numbers auto add places to left of decimal
@@ -283,30 +561,83 @@ class FloatTag(AbstractTag):
         return self._write(tag, value)
 
     def get_token_len(self) -> int:
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
         return self._get_token_len()
 
 
 @dataclass(kw_only=True)
 class InitMagMomTag(AbstractTag):
-    # temporary fix to allow use of initial-magnetic-moments tag
-    # requires the user to set magnetic moments as a string with no extra validation
-    # processes input files as simply a string variable with no extra type conversion
+    """Tag for initial-magnetic-moments tag in JDFTx input files.
 
-    # the formatting of this tag's value depends on the species labels in the ion tags
-    #     these species labels are not necessarily element symbols
-    # there are also multiple types of formatting options of the spins
+    Tag for initial-magnetic-moments tag in JDFTx input files.
+    """
+
+    # temporary fix to allow use of initial-magnetic-moments tag
+    # requires the user to set magnetic moments as a string with no extra
+    # validation. Processes input files as simply a string variable with
+    # no extra type conversion
+
+    # the formatting of this tag's value depends on the species labels in the
+    # ion tags. These species labels are not necessarily element symbols.
+    # There are also multiple types of formatting options of the spins
     # most robustly, this should be a MultiFormatTag, with each option
     #     being a StructureDeferredTag, because this tag needs to know the
     #     results of reading in the structure before being able to robustly
     #     parse the value of this tag
     def validate_value_type(
         self, tag: str, value: Any, try_auto_type_fix: bool = False
-    ) -> tuple:
+    ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the type of the value for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        tag : str
+            The tag to validate the type of the value for.
+        is_valid_out : bool
+            Whether the value is of the correct type.
+        updated_value : Any
+            The value checked against the correct type, possibly fixed.
+        """
         return self._validate_value_type(
             str, tag, value, try_auto_type_fix=try_auto_type_fix
         )
 
     def read(self, tag: str, value: str) -> str:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+
+        Returns
+        -------
+        str
+        """
         try:
             value = str(value)
         except:
@@ -314,9 +645,34 @@ class InitMagMomTag(AbstractTag):
         return value
 
     def write(self, tag: str, value: Any) -> str:
+        """Write the tag and its value as a string.
+
+        Write the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+            The tag and its value as a string.
+        """
         return self._write(tag, value)
 
     def get_token_len(self) -> int:
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
         return self._get_token_len()
 
 
@@ -330,28 +686,29 @@ class TagContainer(AbstractTag):
 
     """
 
-    _is_tag_container: bool = True  # used to ensure only TagContainers are converted between list and dict representations
-    subtags: dict = None
-    linebreak_Nth_entry: int = (
+    is_tag_container: bool = True  # used to ensure only TagContainers are
+    # converted between list and dict representations
+    subtags: dict[str, AbstractTag] = None
+    linebreak_nth_entry: int = (
         None  # handles special formatting for matrix tags, e.g. lattice tag
     )
 
     def _validate_single_entry(
-        self, value: dict, try_auto_type_fix: bool = False
-    ) -> tuple[list[str], list[bool], dict]:
+        self, value: dict | list[dict], try_auto_type_fix: bool = False
+    ) -> tuple[list[str], list[bool], Any]:
         if not isinstance(value, dict):
-            raise ValueError(f"This tag should be a dict: {value}, which is \
+            raise TypeError(f"This tag should be a dict: {value}, which is \
                              of the type {type(value)}")
         tags_checked = []
         types_checks = []
         updated_value = deepcopy(value)
         for subtag, subtag_value in value.items():
             subtag_object = self.subtags[subtag]
-            tags, checks, subtag_value = subtag_object.validate_value_type(
+            tags, checks, subtag_value2 = subtag_object.validate_value_type(
                 subtag, subtag_value, try_auto_type_fix=try_auto_type_fix
             )
             if try_auto_type_fix:
-                updated_value[subtag] = subtag_value
+                updated_value[subtag] = subtag_value2
             if isinstance(checks, list):
                 tags_checked.extend(tags)
                 types_checks.extend(checks)
@@ -367,7 +724,30 @@ class TagContainer(AbstractTag):
     # (TODO action is to fix the return signature and make sure it doesn't break)
     def validate_value_type(
         self, tag: str, value: Any, try_auto_type_fix: bool = False
-    ) -> list[list[Any]] | tuple[list[str], list[bool], dict | list[dict]]:
+    ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the type of the value for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        tag : str
+            The tag to validate the type of the value for.
+        is_valid_out : bool
+            Whether the value is of the correct type.
+        updated_value : Any
+            The value checked against the correct type, possibly fixed.
+        """
         value_dict = self.get_dict_representation(tag, value)
         if self.can_repeat:
             self._validate_repeat(tag, value_dict)
@@ -375,13 +755,47 @@ class TagContainer(AbstractTag):
                 self._validate_single_entry(x, try_auto_type_fix=try_auto_type_fix)
                 for x in value_dict
             ]
-            return [list(x) for x in list(zip(*results))]
-        return self._validate_single_entry(
-            value_dict, try_auto_type_fix=try_auto_type_fix
-        )
+            tags, is_valids, updated_value = [list(x) for x in list(zip(*results))]
+            tag_out = ",".join([",".join(x) for x in tags])
+            is_valid_out = all(all(x) for x in is_valids)
+            if not is_valid_out:
+                warnmsg = "Invalid value(s) found for: "
+                for i, x in enumerate(is_valids):
+                    if not all(x):
+                        for j, y in enumerate(x):
+                            if not y:
+                                warnmsg += f"{tags[i][j]} "
+
+        else:
+            tags, is_valids, updated_value = self._validate_single_entry(
+                value_dict, try_auto_type_fix=try_auto_type_fix
+            )
+            tag_out = ",".join(tags)
+            is_valid_out = all(is_valids)
+            if not is_valid_out:
+                warnmsg = "Invalid value(s) found for: "
+                for i, x in enumerate(is_valids):
+                    if not x:
+                        warnmsg += f"{tags[i]} "
+        return tag_out, is_valid_out, updated_value
 
     # def read(self, tag: str, value: str | list | dict) -> dict:
     def read(self, tag: str, value: str) -> dict:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+
+        Returns
+        -------
+        dict
+        """
         value_list = value.split()
         if tag == "ion":
             special_constraints = [
@@ -390,19 +804,27 @@ class TagContainer(AbstractTag):
             if any(special_constraints):
                 value_list = value_list[: special_constraints.index(True)]
                 warnings.warn(
-                    "Found special constraints reading an 'ion' tag, these were dropped; reading them has not been implemented!"
+                    "Found special constraints reading an 'ion' tag, \
+                        these were dropped; reading them has not been \
+                            implemented!",
+                    stacklevel=2,
                 )
 
-        tempdict = {}  # temporarily store read tags out of order they are processed
-        # Could this for loop only loop over subtags that have write_tagname=True? This doesn't throw errors but seems dangerous
+        tempdict = {}  # temporarily store read tags out of order they are
+        # processed
+        # Could this for loop only loop over subtags that have
+        # write_tagname=True? This doesn't throw errors but seems dangerous.
         for subtag, subtag_type in self.subtags.items():
-            # every subtag with write_tagname=True in a TagContainer has a fixed length and can be immediately read in this loop if it is present
+            # every subtag with write_tagname=True in a TagContainer has a
+            # fixed length and can be immediately read in this loop if it is
+            # present
             if subtag in value_list:  # this subtag is present in the value string
                 subtag_count = value_list.count(subtag)
                 if not subtag_type.can_repeat:
                     if subtag_count > 1:
                         raise ValueError(
-                            f"Subtag {subtag} is not allowed to repeat but appears more than once in {tag}'s value {value}"
+                            f"Subtag {subtag} is not allowed to repeat but \
+                                appears more than once in {tag}'s value {value}"
                         )
                     idx_start = value_list.index(subtag)
                     token_len = subtag_type.get_token_len()
@@ -414,62 +836,85 @@ class TagContainer(AbstractTag):
                     del value_list[idx_start:idx_end]
                 else:
                     tempdict[subtag] = []
-                    for i in range(subtag_count):
+                    for _ in range(subtag_count):
                         idx_start = value.index(subtag)
                         idx_end = idx_start + subtag_type.get_token_len()
                         subtag_value = " ".join(
                             value_list[(idx_start + 1) : idx_end]
-                        )  # add 1 so the subtag value string excludes the subtagname
+                        )  # add 1 so the subtag value string excludes the
+                        # subtagname
                         tempdict[subtag].append(subtag_type.read(subtag, subtag_value))
                         del value_list[idx_start:idx_end]
 
         for subtag, subtag_type in self.subtags.items():
-            # now try to populate remaining subtags that do not use a keyword in order of appearance
-            # since all subtags in JDFTx that are TagContainers use a keyword to start their field, we know that
-            #    any subtags processed here are only populated with a single token
+            # now try to populate remaining subtags that do not use a keyword
+            # in order of appearance. Since all subtags in JDFTx that are
+            # TagContainers use a keyword to start their field, we know that
+            # any subtags processed here are only populated with a single token.
             if len(value_list) == 0:
                 break
             if (
                 subtag in tempdict or subtag_type.write_tagname
-            ):  # this tag has already been read or requires a tagname keyword to be present
+            ):  # this tag has already been read or requires a tagname keyword
+                # to be present
                 continue
-            # note that this next line breaks if the JDFTx dump-name formatting is allowing
-            # dump-name would have nested repeating TagContainers, which each need 2 values
-            # you could check for which nonoptional args the TagContainers need and provide those but that's not general
-            # you really need to be passing the entire value string for parsing, but that changes the return args
+            # note that this next line breaks if the JDFTx dump-name formatting
+            # is allowing dump-name would have nested repeating TagContainers,
+            # which each need 2 values. You could check for which nonoptional
+            # args the TagContainers need and provide those but that's not
+            # general. You really need to be passing the entire value string
+            # for parsing, but that changes the return args.
             tempdict[subtag] = subtag_type.read(subtag, value_list[0])
             del value_list[0]
 
-        # reorder all tags to match order of __MASTER_TAG_LIST__ and do coarse-grained validation of read
+        # reorder all tags to match order of __MASTER_TAG_LIST__ and do
+        # coarse-grained validation of read.
         subdict = {x: tempdict[x] for x in self.subtags if x in tempdict}
         for subtag, subtag_type in self.subtags.items():
             if not subtag_type.optional and subtag not in subdict:
                 raise ValueError(
-                    f"The {subtag} tag is not optional but was not populated during the read!"
+                    f"The {subtag} tag is not optional but was not populated \
+                        during the read!"
                 )
         if len(value_list) > 0:
             raise ValueError(
-                f"Something is wrong in the JDFTXInfile formatting, some values were not processed: {value}"
+                f"Something is wrong in the JDFTXInfile formatting, some \
+                    values were not processed: {value}"
             )
         return subdict
 
     def write(self, tag: str, value: Any) -> str:
+        """Write the tag and its value as a string.
+
+        Write the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+            The tag and its value as a string.
+        """
         if not isinstance(value, dict):
-            raise ValueError(
-                f"value = {value}\nThe value to the {tag} write method must be a dict since it is a TagContainer!"
+            raise TypeError(
+                f"value = {value}\nThe value to the {tag} write method must be \
+                    a dict since it is a TagContainer!"
             )
 
         final_value = ""
         indent = "    "
-        count = 0
-        for subtag, subvalue in value.items():
-            count += 1
-
+        for count, (subtag, subvalue) in enumerate(value.items()):
             if self.subtags[subtag].can_repeat and isinstance(subvalue, list):
                 # if a subtag.can_repeat, it is assumed that subvalue is a list
                 #    the 2nd condition ensures this
                 # if it is not a list, then the tag will still be printed by the else
-                #    this could be relevant if someone manually sets the tag the can repeat's value to a non-list
+                #    this could be relevant if someone manually sets the tag's
+                #    can_repeat value to a non-list.
                 print_str_list = [
                     self.subtags[subtag].write(subtag, entry) for entry in subvalue
                 ]
@@ -479,9 +924,9 @@ class TagContainer(AbstractTag):
 
             if self.multiline_tag:
                 final_value += f"{indent}{print_str}\\\n"
-            elif self.linebreak_Nth_entry is not None:
+            elif self.linebreak_nth_entry is not None:
                 # handles special formatting with extra linebreak, e.g. for lattice tag
-                i_column = count % self.linebreak_Nth_entry
+                i_column = count % self.linebreak_nth_entry
                 if i_column == 1:
                     final_value += f"{indent}{print_str}"
                 elif i_column == 0:
@@ -491,15 +936,26 @@ class TagContainer(AbstractTag):
             else:
                 final_value += f"{print_str}"
         if (
-            self.multiline_tag or self.linebreak_Nth_entry is not None
+            self.multiline_tag or self.linebreak_nth_entry is not None
         ):  # handles special formatting for lattice tag
-            final_value = final_value[:-2]  # exclude final \\n from final print call
+            final_value = final_value[:-2]  # exclude final \\n from final
+            # print call
 
-        return self._write(tag, final_value, self.linebreak_Nth_entry is not None)
+        return self._write(tag, final_value, self.linebreak_nth_entry is not None)
 
     def get_token_len(self) -> int:
-        min_token_len = int(self.write_tagname)  # length of value subtags added next
-        for subtag, subtag_type in self.subtags.items():
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
+        min_token_len = int(self.write_tagname)  # length of value subtags
+        # added next
+        for subtag_type in self.subtags.values():
             subtag_token_len = (
                 subtag_type.get_token_len()
             )  # recursive for nested TagContainers
@@ -510,6 +966,22 @@ class TagContainer(AbstractTag):
         return min_token_len
 
     def check_representation(self, tag: str, value: Any) -> str:
+        """Check the representation of the value.
+
+        Check the representation of the value.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to check the representation of the value for.
+        value : Any
+            The value to check the representation of.
+
+        Returns
+        -------
+        str
+            The representation of the value.
+        """
         if not self.allow_list_representation:
             return "dict"
         value_list = self.get_list_representation(tag, value)
@@ -527,75 +999,138 @@ class TagContainer(AbstractTag):
         for subtag, subtag_value in value.items():
             subtag_type = self.subtags[subtag]
             if subtag_type.allow_list_representation:
-                # this block deals with making list representations of any nested TagContainers
+                # this block deals with making list representations of any
+                # nested TagContainers
                 if not isinstance(value[subtag], dict):
                     raise ValueError(
-                        f"The subtag {subtag} is not a dict: '{value[subtag]}', so could not be converted"
+                        f"The subtag {subtag} is not a dict: '{value[subtag]}',\
+                             so could not be converted"
                     )
-                subtag_value = subtag_type.get_list_representation(
+                subtag_value2 = subtag_type.get_list_representation(
                     subtag, value[subtag]
                 )  # recursive list generation
 
-                if subtag_type.write_tagname:  # needed to write 'v' subtag in 'ion' tag
+                if subtag_type.write_tagname:  # needed to write 'v' subtag in
+                    # 'ion' tag
                     value_list.append(subtag)
-                value_list.extend(subtag_value)
+                value_list.extend(subtag_value2)
             elif not subtag_type.allow_list_representation and isinstance(
                 value[subtag], dict
             ):
-                # this triggers if someone sets this tag using mixed dict/list representations
-                warnings.warn(f"The {subtag} subtag does not allow list representation with a value {value[subtag]}.\n \
-                              I added the dict to the list. Is this correct? You will not be able to convert back!")
+                # this triggers if someone sets this tag using mixed dict/list
+                # representations
+                warnings.warn(
+                    f"The {subtag} subtag does not allow list \
+                              representation with a value {value[subtag]}.\n \
+                              I added the dict to the list. Is this correct? \
+                                You will not be able to convert back!",
+                    stacklevel=2,
+                )
                 value_list.append(value[subtag])
             else:
-                # the subtag is simply of form {'subtag': subtag_value} and now adds concrete values to the list
+                # the subtag is simply of form {'subtag': subtag_value} and now
+                # adds concrete values to the list
                 value_list.append(value[subtag])
 
         # return list of lists for tags in matrix format, e.g. lattice tag
-        if (Ncol := self.linebreak_Nth_entry) is not None:
-            Nrow = int(len(value_list) / Ncol)
+        if (ncol := self.linebreak_nth_entry) is not None:
+            nrow = int(len(value_list) / ncol)
             value_list = [
-                [value_list[row * Ncol + col] for col in range(Ncol)]
-                for row in range(Nrow)
+                [value_list[row * ncol + col] for col in range(ncol)]
+                for row in range(nrow)
             ]
         return value_list
 
     def get_list_representation(self, tag: str, value: Any) -> list:
-        # convert dict representation into list representation by writing (nested) dicts into list or list of lists
+        """Convert the value to a list representation.
+
+        Convert the value to a list representation.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to convert the value to a list representation for.
+        value : Any
+            The value to convert to a list representation.
+
+        Returns
+        -------
+        list
+            The value converted to a list representation.
+        """
+        # convert dict representation into list representation by writing
+        # (nested) dicts into list or list of lists.
         # there are 4 types of TagContainers in the list representation:
         # can_repeat: list of bool/str/int/float (ion-species)
         # can_repeat: list of lists (ion)
         # cannot repeat: list of bool/str/int/float (elec-cutoff)
         # cannot repeat: list of lists (lattice)
         if self.can_repeat:
-            if all([isinstance(entry, list) for entry in value]):
+            if all(isinstance(entry, list) for entry in value):
                 return value  # no conversion needed
-            if any([not isinstance(entry, dict) for entry in value]):
-                raise ValueError(f"The {tag} tag set to {value} must be a list of dict")
+            if any(not isinstance(entry, dict) for entry in value):
+                raise ValueError(f"The {tag} tag set to {value} must be a list \
+                                 of dict")
             tag_as_list = [self._make_list(entry) for entry in value]
         else:
             tag_as_list = self._make_list(value)
         return tag_as_list
 
     @staticmethod
-    def _check_for_mixed_nesting(tag: str, value: Any):
-        if any([isinstance(x, (dict, list)) for x in value]):
+    def _check_for_mixed_nesting(tag: str, value: Any) -> None:
+        if any(isinstance(x, (dict, list)) for x in value):
             raise ValueError(
-                f"{tag} with {value} cannot have nested lists/dicts mixed with bool/str/int/floats!"
+                f"{tag} with {value} cannot have nested lists/dicts mixed with \
+                    bool/str/int/floats!"
             )
 
-    def _make_dict(self, tag: str, value_list: list) -> str:
-        # Ben: Is this supposed to create a dictionary? This creates a string without any dictionary indications
+    def _make_str_for_dict(self, tag: str, value_list: list) -> str:
+        """Convert the value to a string representation.
+
+        Convert the value to a string representation for dict representation.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to convert the value to a string representation for.
+        value_list : list
+            The value to convert to a string representation.
+
+        Returns
+        -------
+        str
+            The value converted to a string representation for dict
+            representation.
+        """
         value = flatten_list(tag, value_list)
         self._check_for_mixed_nesting(tag, value)
         return " ".join([str(x) for x in value])
 
     def get_dict_representation(self, tag: str, value: list) -> dict | list[dict]:
-        # convert list or list of lists representation into string the TagContainer can process back into (nested) dict
-        if self.can_repeat:  # repeated tags must be in same format
-            if len(set([len(x) for x in value])) > 1:
-                raise ValueError(
-                    f"The values for {tag} {value} provided in a list of lists have different lengths"
-                )
+        """Convert the value to a dict representation.
+
+        Convert the value to a dict representation.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to convert the value to a dict representation for.
+        value : list
+            The value to convert to a dict representation.
+
+        Returns
+        -------
+        dict | list[dict]
+            The value converted to a dict representation.
+        """
+        # convert list or list of lists representation into string the
+        # TagContainer can process back into (nested) dict
+        if self.can_repeat and len({len(x) for x in value}) > 1:  # repeated
+            # tags must be in same format
+            raise ValueError(
+                f"The values for {tag} {value} provided in a list of lists \
+                    have different lengths"
+            )
         value = value.tolist() if isinstance(value, np.ndarray) else value
 
         # there are 4 types of TagContainers in the list representation:
@@ -607,60 +1142,94 @@ class TagContainer(AbstractTag):
         # the .read() method automatically handles regenerating any nesting
         # because is just like reading a file
         if self.can_repeat:
-            if all([isinstance(entry, dict) for entry in value]):
+            if all(isinstance(entry, dict) for entry in value):
                 return value  # no conversion needed
-            string_value = [self._make_dict(tag, entry) for entry in value]
+            string_value = [self._make_str_for_dict(tag, entry) for entry in value]
             return [self.read(tag, entry) for entry in string_value]
 
         if isinstance(value, dict):
             return value  # no conversion needed
-        list_value = self._make_dict(tag, value)
+        list_value = self._make_str_for_dict(tag, value)
         return self.read(tag, list_value)
 
 
 @dataclass(kw_only=True)
 class StructureDeferredTagContainer(TagContainer):
-    """
-    This tag class accommodates tags that can have complicated values that depend on
-    the number and species of atoms present. The species labels do not necessarily have
-    to be elements, but just match the species given in the ion/ion-species tag(s). We
-    will use the set of labels provided by the ion tag(s) because that is a well-defined
-    token, while it may not be explicitly defined in ion-species.
+    """Class for tags that require a Pymatgen structure to process the value.
 
-    Relevant tags: add-U, initial-magnetic-moments, initial-oxidation-states, set-atomic-radius, setVDW
+    This tag class accommodates tags that can have complicated values that
+    depend on the number and species of atoms present. The species labels do
+    not necessarily have to be elements, but just match the species given in
+    the ion/ion-species tag(s). We will use the set of labels provided by the
+    ion tag(s) because that is a well-defined token, while it may not be
+    explicitly defined in ion-species.
+
+    Relevant tags: add-U, initial-magnetic-moments, initial-oxidation-states,
+    set-atomic-radius, setVDW
     """
 
     defer_until_struc: bool = True
 
-    def read(self, tag: str, value: str, structure=None):
-        raise NotImplementedError
+    def read(self, tag: str, value: str, structure: Structure = None) -> None:
+        """Read the value string for this tag.
 
-        """This method is similar to StrTag.read(), but with less validation because usually will
-        get a string like 'Fe 2.0 2.5 Ni 1.0 1.1' as the value to process later
+        Read the value string for this tag.
 
-        If this method is called separately from the JDFTXInfile processing methods, a Pymatgen
-        structure may be provided directly
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+        structure : Structure, optional
+            The Pymatgen structure to use for reading the value string,
+            by default None.
         """
-        try:
-            value = str(value)
-        except:
-            raise ValueError(f"Could not set '{value}' to a str for {tag}!")
-
-        if structure is not None:
-            value = self.read_with_structure(tag, value, structure)
-        return value
-
-    def read_with_structure(self, tag: str, value: str, structure):
         raise NotImplementedError
 
-        """Fully process the value string using data from the Pymatgen structure"""
-        return self._TC_read(tag, value, structure)
+        # """This method is similar to StrTag.read(), but with less validation
+        # because usually will
+        # get a string like 'Fe 2.0 2.5 Ni 1.0 1.1' as the value to process later
+
+        # If this method is called separately from the JDFTXInfile processing
+        # methods, a Pymatgen
+        # structure may be provided directly
+        # """
+        # try:
+        #     value = str(value)
+        # except:
+        #     raise ValueError(f"Could not set '{value}' to a str for {tag}!")
+
+        # if structure is not None:
+        #     value = self.read_with_structure(tag, value, structure)
+        # return value
+
+    def read_with_structure(self, tag: str, value: str, structure: Structure) -> None:
+        """Read tag/value pair with a Pymatgen structure provided.
+
+        Read tag/value pair with a Pymatgen structure provided.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+        structure : Structure
+            The Pymatgen structure to use for reading the value string.
+        """
+        raise NotImplementedError
+
+        # """Fully process the value string using data from the Pymatgen
+        # structure"""
+        # return self._TC_read(tag, value, structure)
 
 
 @dataclass(kw_only=True)
 class MultiformatTag(AbstractTag):
-    """
-    This tag class should be used for tags that could have different types of
+    """Class for tags with multiple format options.
+
+    Class for tags that could have different types of
     input values given to them or tags where different subtag options directly
     impact how many expected arguments are provided e.g. the coulomb-truncation
     or van-der-waals tags.
@@ -670,11 +1239,25 @@ class MultiformatTag(AbstractTag):
     cases by itself.
     """
 
-    format_options: list = None
+    format_options: list[AbstractTag] = None
 
     def validate_value_type(
-        self, tag, value, try_auto_type_fix: bool = False
+        self, tag: str, value: Any, try_auto_type_fix: bool = False
     ) -> tuple[str, bool, Any]:
+        """Validate the type of the value for this tag.
+
+        Validate the type of the value for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to validate the value type for.
+        value : Any
+            The value to validate the type of.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+        """
         format_index, value = self._determine_format_option(
             tag, value, try_auto_type_fix=try_auto_type_fix
         )
@@ -682,14 +1265,25 @@ class MultiformatTag(AbstractTag):
         return tag, is_valid, value
 
     def read(self, tag: str, value: str) -> None:
+        """Read the value string for this tag.
+
+        Read the value string for this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value : str
+            The value string to read.
+        """
         problem_log = []
         for i, trial_format in enumerate(
             self.format_options
         ):  # format_options is a list of AbstractTag-inheriting objects
             try:
                 return trial_format.read(tag, value)
-            except Exception as e:
-                problem_log.append(e)
+            except (ValueError, TypeError) as e:
+                problem_log.append(f"Format {i}: {e}")
         errormsg = f"No valid read format for '{tag} {value}' tag\nAdd option \
             to format_options or double-check the value string and retry!\n\n"
         errormsg += "Here is the log of errors for each known \
@@ -699,50 +1293,112 @@ class MultiformatTag(AbstractTag):
         )
         raise ValueError(errormsg)
 
+    def raise_invalid_format_option_error(self, tag: str, i: int) -> None:
+        """Raise an error for an invalid format option.
+
+        Raise an error for an invalid format option.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to raise the error for.
+        i : int
+            The index of the format option to raise the error for.
+        """
+        raise ValueError(
+            f"{tag} option {i} is not it: validation \
+                                     failed"
+        )
+
     def _determine_format_option(
         self, tag: str, value: Any, try_auto_type_fix: bool = False
     ) -> tuple[int, Any]:
+        """Determine the format option for the value of this tag.
+
+        This method determines the format option for the value of this tag.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to determine the format option for.
+        value : Any
+            The value to determine the format option for.
+        try_auto_type_fix : bool, optional
+            Whether to try to automatically fix the type of the value,
+            by default False.
+
+        Returns
+        -------
+        int
+            The index of the format option for the value of this tag.
+        Any
+            The value of this tag.
+        """
+        exceptions = []
         for i, format_option in enumerate(self.format_options):
             try:
-                # print(i, tag, value, format_option)
                 _, is_tag_valid, value = format_option.validate_value_type(
                     tag, value, try_auto_type_fix=try_auto_type_fix
                 )
-                if isinstance(is_tag_valid, list):
-                    is_tag_valid = flatten_list(tag, is_tag_valid)
-                    if not all(is_tag_valid):
-                        raise ValueError(
-                            f"{tag} option {i} is not it: validation failed"
-                        )
-                elif not is_tag_valid:
-                    raise ValueError(f"{tag} option {i} is not it: validation \
-                                     failed")
-
-                # print('PASSED!', tag, value, 'option', i)
-                return i, value
-            except:
-                pass
-                # print(f'{tag} option {i} is not it')
+                if not is_tag_valid:
+                    self.raise_invalid_format_option_error(tag, i)
+                else:
+                    return i, value
+            except (ValueError, TypeError) as e:  # TODO: Make sure these are all
+                # the possible exceptions
+                exceptions.append(e)
         raise ValueError(
-            f"The format for {tag} for:\n{value}\ncould not be determined from the available options! Check your inputs and/or MASTER_TAG_LIST!"
+            f"The format for {tag} for:\n{value}\ncould not be determined \
+                from the available options! Check your inputs and/or \
+                    MASTER_TAG_LIST! (exceptions: {exceptions})"
         )
 
     def write(self, tag: str, value: Any) -> str:
-        format_index, _ = self._determine_format_option(tag, value)
-        # print(f'using index of {format_index}')
+        """Write the tag and its value as a string.
 
-        # Ben: Changing _write to write, using _write seem to shoot you straight
-        # to the floor level definition, and completely messes up all the calls
-        # to subtags for how they're supposed to be printed and just prints
-        # a dictionary instead.
-        # Ben: Update: this fixes it.
+        This method writes the tag and its value as a string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to write.
+        value : Any
+            The value to write.
+
+        Returns
+        -------
+        str
+        """
+        format_index, _ = self._determine_format_option(tag, value)
         return self.format_options[format_index].write(tag, value)
-        # return self.format_options[format_index]._write(tag, value)
 
 
 @dataclass
 class BoolTagContainer(TagContainer):
+    """BoolTagContainer class for handling the subtags to the "dump" tag.
+
+    This class is used to handle the subtags to the "dump" tag. All subtags
+    are freqs for dump, and all values for these tags are boolean values that
+    are read given the existence of their "var" name.
+    """
+
     def read(self, tag: str, value_str: str) -> dict:
+        """Read the value string for this tag.
+
+        This method reads the value string for this tag. It is used to parse the
+        value string for the tag and return the parsed value.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value_str : str
+            The value string to read.
+
+        Returns
+        -------
+        dict
+        """
         value = value_str.split()
         tempdict = {}
         for subtag, subtag_type in self.subtags.items():
@@ -769,7 +1425,28 @@ class BoolTagContainer(TagContainer):
 
 @dataclass
 class DumpTagContainer(TagContainer):
+    """DumpTagContainer class for handling the "dump" tag.
+
+    This class is used to handle the "dump" tag.
+    """
+
     def read(self, tag: str, value_str: str) -> dict:
+        """Read the value string for this tag.
+
+        This method reads the value string for this tag. It is used to parse the
+        value string for the tag and return the parsed value.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to read the value string for.
+        value_str : str
+            The value string to read.
+
+        Returns
+        -------
+        dict
+        """
         value = value_str.split()
         tempdict = {}
         # Each subtag is a freq, which will be a BoolTagContainer

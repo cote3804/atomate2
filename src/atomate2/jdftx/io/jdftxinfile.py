@@ -1,6 +1,6 @@
-"""
+"""Classes for reading/manipulating/writing JDFTx input files.
+
 Classes for reading/manipulating/writing JDFTx input files.
-All major JDFTx input files.
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ import itertools
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -17,9 +18,13 @@ from monty.io import zopen
 from monty.json import MSONable
 from pymatgen.core import Structure
 from pymatgen.util.io_utils import clean_lines
-from pathlib import Path
 
-from atomate2.jdftx.io.generic_tags import flatten_list, DumpTagContainer
+from atomate2.jdftx.io.generic_tags import (
+    AbstractTag,
+    BoolTagContainer,
+    DumpTagContainer,
+    TagContainer,
+)
 from atomate2.jdftx.io.jdftxinfile_master_format import (
     __PHONON_TAGS__,
     __TAG_LIST__,
@@ -39,12 +44,13 @@ __author__ = "Jacob Clary"
 
 
 class JDFTXInfile(dict, MSONable):
-    """
+    """Class for reading/writing JDFtx input files.
+
     JDFTxInfile object for reading and writing JDFTx input files.
     Essentially a dictionary with some helper functions.
     """
 
-    path_parent: str = None # Only gets initialized if from_file
+    path_parent: str = None  # Only gets initialized if from_file
 
     def __init__(self, params: dict[str, Any] | None = None) -> None:
         """
@@ -58,26 +64,60 @@ class JDFTXInfile(dict, MSONable):
             self.update(params)
 
     def __str__(self) -> str:
-        """Str representation of dict"""
-        out = "".join([line + "\n" for line in self.get_text_list()])
-        return out
+        """Return str representation of JDFTXInfile.
 
-    def __add__(self, other: Self) -> Self:
+        Return str representation of JDFTXInfile.
+
+        Returns
+        -------
+        str
+            String representation of JDFTXInfile.
         """
+        return "".join([line + "\n" for line in self.get_text_list()])
+
+    # def __add__(self, other: Self) -> Self:
+    def __add__(self, other: JDFTXInfile) -> JDFTXInfile:
+        """Add existing JDFTXInfile object to method caller JDFTXInfile object.
+
         Add all the values of another JDFTXInfile object to this object.
         Facilitate the use of "standard" JDFTXInfiles.
+
+        Parameters
+        ----------
+        other : JDFTXInfile
+            JDFTXInfile object to add to the method caller object.
+
+        Returns
+        -------
+        JDFTXInfile
         """
         params: dict[str, Any] = dict(self.items())
         for key, val in other.items():
             if key in self and val != self[key]:
                 raise ValueError(
-                    f"JDFTXInfiles have conflicting values for {key}: {self[key]} != {val}"
+                    f"JDFTXInfiles have conflicting values for {key}: \
+                        {self[key]} != {val}"
                 )
             params[key] = val
         return type(self)(params)
 
     def as_dict(self, sort_tags: bool = True, skip_module_keys: bool = False) -> dict:
-        """MSONable dict."""
+        """Return JDFTXInfile as MSONable dict.
+
+        Return JDFTXInfile as MSONable dict.
+
+        Parameters
+        ----------
+        sort_tags : bool, optional
+            Whether to sort the tags, by default True
+        skip_module_keys : bool, optional
+            Whether to skip the module keys, by default False
+
+        Returns
+        -------
+        dict
+            JDFTXInfile as MSONable dict
+        """
         params = dict(self)
         if sort_tags:
             params = {tag: params[tag] for tag in __TAG_LIST__ if tag in params}
@@ -88,32 +128,55 @@ class JDFTXInfile(dict, MSONable):
 
     @classmethod
     def from_dict(cls, dct: dict[str, Any]) -> Self:
-        """
-        Args:
-            dct (dict): Serialized JDFTXInfile
+        """Parse a dictionary to create a JDFTXInfile object.
+
+        Parse a dictionary to create a JDFTXInfile object.
+
+        Parameters
+        ----------
+        dct : dict
+            Dictionary to parse.
 
         Returns
         -------
             JDFTXInfile
         """
         temp = cls({k: v for k, v in dct.items() if k not in ("@module", "@class")})
-        # since users can provide arbitrary tags and values, need to do some validation
-        #    (could do more later)
-        # passing through the list -> dict representation ensures that tags pass through
-        # a conversion to string and then through all .read() methods (happens during
-        # list->dict conversion) to help ensure correct formatting
-        # the list representation is easier to look at so convert back at the end
+        # since users can provide arbitrary tags and values, need to do some
+        #   validation (could do more later)
+        # passing through the list -> dict representation ensures that tags
+        # pass through a conversion to string and then through all .read()
+        # methods (happens during list->dict conversion) to help ensure correct
+        # formatting the list representation is easier to look at so convert
+        # back at the end
         temp = cls.get_dict_representation(cls.get_list_representation(temp))
         return cls.get_list_representation(temp)
 
-    def copy(self) -> Self:
+    def copy(self) -> JDFTXInfile:
+        """Return a copy of the JDFTXInfile object.
+
+        Return a copy of the JDFTXInfile object.
+
+        Returns
+        -------
+        JDFTXInfile
+            Copy of the JDFTXInfile object.
+        """
         return type(self)(self)
 
-    def get_text_list(self) -> str:
-        """Get a list of strings representation of the JDFTXInfile"""
+    def get_text_list(self) -> list[str]:
+        """Get a list of strings representation of the JDFTXInfile.
+
+        Get a list of strings representation of the JDFTXInfile.
+
+        Returns
+        -------
+        list[str]
+            List of strings representation of the JDFTXInfile.
+        """
         self_as_dict = self.get_dict_representation(self)
 
-        text = []
+        text: list[str] = []
         for tag_group in MASTER_TAG_LIST:
             added_tag_in_group = False
             for tag in MASTER_TAG_LIST[tag_group]:
@@ -123,14 +186,18 @@ class JDFTXInfile(dict, MSONable):
                     raise ValueError("Wannier functionality has not been added!")
 
                 added_tag_in_group = True
-                tag_object = MASTER_TAG_LIST[tag_group][tag]
+                tag_object: AbstractTag = MASTER_TAG_LIST[tag_group][tag]
                 if tag_object.can_repeat and isinstance(self_as_dict[tag], list):
-                    # if a tag_object.can_repeat, it is assumed that self[tag] is a list
-                    #    the 2nd condition ensures this
-                    # if it is not a list, then the tag will still be printed by the else
-                    #    this could be relevant if someone manually sets the tag the can repeat's value to a non-list
-                    for entry in self_as_dict[tag]:
-                        text.append(tag_object.write(tag, entry))
+                    # if a tag_object.can_repeat, it is assumed that self[tag]
+                    #    is a list the 2nd condition ensures this
+                    # if it is not a list, then the tag will still be printed by
+                    #    the else this could be relevant if someone manually
+                    #    sets the tag the can repeat's value to a non-list
+                    text += [
+                        tag_object.write(tag, entry) for entry in self_as_dict[tag]
+                    ]
+                    # for entry in self_as_dict[tag]:
+                    #     text.append(tag_object.write(tag, entry))
                 else:
                     text.append(tag_object.write(tag, self_as_dict[tag]))
 
@@ -141,8 +208,12 @@ class JDFTXInfile(dict, MSONable):
     def write_file(self, filename: PathLike) -> None:
         """Write JDFTXInfile to a file.
 
-        Args:
-            filename (str): filename to write to.
+        Write JDFTXInfile to a file.
+
+        Parameters
+        ----------
+        filename : PathLike
+            Filename to write to.
         """
         with zopen(filename, mode="wt") as file:
             file.write(str(self))
@@ -157,8 +228,19 @@ class JDFTXInfile(dict, MSONable):
     ) -> Self:
         """Read an JDFTXInfile object from a file.
 
-        Args:
-            filename (str): Filename for file
+        Read an JDFTXInfile object from a file.
+
+        Parameters
+        ----------
+        filename : PathLike
+            Filename to read from.
+        dont_require_structure : bool, optional
+            Whether to require structure tags, by default False
+        sort_tags : bool, optional
+            Whether to sort the tags, by default True
+        assign_path_parent : bool, optional
+            Whether to assign the parent directory of the input file for include
+            tags, by default True
 
         Returns
         -------
@@ -168,19 +250,18 @@ class JDFTXInfile(dict, MSONable):
         if assign_path_parent:
             path_parent = Path(filename).parents[0]
         with zopen(filename, mode="rt") as file:
-            instance = cls.from_str(
+            return cls.from_str(
                 file.read(),
                 dont_require_structure=dont_require_structure,
                 sort_tags=sort_tags,
                 path_parent=path_parent,
             )
-            return instance
 
     @staticmethod
-    def _preprocess_line(line: str) -> tuple[Any, str, str]:
+    def _preprocess_line(line: str) -> tuple[AbstractTag, str, str]:
         """Preprocess a line from a JDFTXInfile.
-        
-        Preprocess a line from a JDFTXInfile, splitting it into a tag object, 
+
+        Preprocess a line from a JDFTXInfile, splitting it into a tag object,
         tag name, and value.
 
         Parameters
@@ -190,50 +271,77 @@ class JDFTXInfile(dict, MSONable):
 
         Returns
         -------
-        tuple[Any, str, str]
+        tuple[AbstractTag, str, str]
             Tag object, tag name, and value.
         """
-        line = line.strip().split(maxsplit=1)
-        tag: str = line[0].strip()
+        line_list = line.strip().split(maxsplit=1)
+        tag: str = line_list[0].strip()
         if tag in __PHONON_TAGS__:
             raise ValueError("Phonon functionality has not been added!")
         if tag in __WANNIER_TAGS__:
             raise ValueError("Wannier functionality has not been added!")
         if tag not in __TAG_LIST__:
             raise ValueError(
-                f"The {tag} tag in {line} is not in MASTER_TAG_LIST and is not a comment, something is wrong with this input data!"
+                f"The {tag} tag in {line_list} is not in MASTER_TAG_LIST and is\
+                    not a comment, something is wrong with this input data!"
             )
         tag_object = get_tag_object(tag)
         value: str = ""
-        if len(line) == 2:
-            value = line[1].strip()
-        elif len(line) == 1:
+        if len(line_list) == 2:
+            value = line_list[1].strip()
+        elif len(line_list) == 1:
             value = (
-                ""  # exception for tags where only tagname is used, e.g. dump-only tag
+                ""  # exception for tags where only tagname is used,
+                # e.g. dump-only tag
             )
         else:
             raise ValueError(
-                f"The len(line.split(maxsplit=1)) of {line} should never not be 1 or 2"
+                f"The len(line.split(maxsplit=1)) of {line_list} should never \
+                    not be 1 or 2"
             )
 
         return tag_object, tag, value
 
     @staticmethod
     def _store_value(
-        params: dict, tag_object: Any, tag: str, value: Any
-        ) -> dict: # I do not love setting value to Any, are there any existing instances where Any is not
-        # a dict, str, float, or int?
+        params: dict[str, list | list[dict[str, dict]] | Any],
+        tag_object: AbstractTag,
+        tag: str,
+        value: Any,
+    ) -> dict:
+        """Store the value in the params dictionary.
+
+        Store the value in the params dictionary.
+
+        Parameters
+        ----------
+        params : dict
+            Dictionary to store the value in.
+        tag_object : AbstractTag
+            Tag object.
+        tag : str
+            Tag name.
+        value : Any
+            Value to store.
+
+        Returns
+        -------
+        dict
+        """
         if tag_object.can_repeat:  # store tags that can repeat in a list
             if tag not in params:
-                    params[tag] = []
-            if not type(tag_object) in [DumpTagContainer]:
+                params[tag] = []
+            if type(tag_object) not in [DumpTagContainer]:
                 params[tag].append(value)
-            else: # The previous if statement will need to adapted to reference
+            else:  # The previous if statement will need to adapted to reference
                 # a tag object flag to be stored in this manner. This manner
                 # is to store all subtags as standalone dictionaries within
                 # a list, but to combine alike subtags (ie the same dump freq)
                 # as they appear.
-                assert type(value) is dict
+                if not isinstance(value, dict):
+                    raise ValueError(
+                        f"The value for the {tag} tag should be a dictionary!"
+                    )
                 for freq in value:
                     inserted = False
                     for i, preex in enumerate(params[tag]):
@@ -246,16 +354,17 @@ class JDFTXInfile(dict, MSONable):
         else:
             if tag in params:
                 raise ValueError(
-                    f"The '{tag}' tag appears multiple times in this input when it should not!"
+                    f"The '{tag}' tag appears multiple times in this input when\
+                        it should not!"
                 )
             params[tag] = value
         return params
 
     @staticmethod
     def _gather_tags(lines: list[str]) -> list[str]:
-        """ Gather broken lines into single string for processing later.
+        """Gather broken lines into single string for processing later.
 
-        Gather all tags broken across lines into single string for processing 
+        Gather all tags broken across lines into single string for processing
         later.
 
         Parameters
@@ -269,7 +378,7 @@ class JDFTXInfile(dict, MSONable):
             List of strings with tags broken across lines combined into single
             string.
         """
-        # gather all tags broken across lines into single string for processing 
+        # gather all tags broken across lines into single string for processing
         # later
         total_tag = ""
         gathered_strings = []
@@ -288,7 +397,7 @@ class JDFTXInfile(dict, MSONable):
 
     @property
     def structure(self) -> Structure:
-        """ Return a pymatgen Structure object.
+        """Return a pymatgen Structure object.
 
         Return a pymatgen Structure object.
 
@@ -297,29 +406,42 @@ class JDFTXInfile(dict, MSONable):
         structure : pymatgen.Structure
             Pymatgen structure object.
         """
-        jdftstructure = self.to_pmg_structure()
-        structure = jdftstructure.structure
-        return structure
+        return self.to_pmg_structure(self)
 
     @classmethod
     def from_str(
-        cls, string: str, dont_require_structure: bool = False,
-        sort_tags: bool = True, path_parent: str = None
+        cls,
+        string: str,
+        dont_require_structure: bool = False,
+        sort_tags: bool = True,
+        path_parent: Path = None,
     ) -> Self:
-        """Read an JDFTXInfile object from a string.
+        """Read a JDFTXInfile object from a string.
 
-        Args:
-            string (str): JDFTXInfile string
+        Read a JDFTXInfile object from a string.
+
+        Parameters
+        ----------
+        string : str
+            String to read from.
+        dont_require_structure : bool, optional
+            Whether to require structure tags, by default False
+        sort_tags : bool, optional
+            Whether to sort the tags, by default True
+        path_parent : Path, optional
+            Path to the parent directory of the input file for include tags,
+            by default None
 
         Returns
         -------
-            JDFTXInfile object
+        JDFTXInfile
         """
         lines: list[str] = list(clean_lines(string.splitlines()))
         lines = cls._gather_tags(lines)
 
         params: dict[str, Any] = {}
-        # process all tag value lines using specified tag formats in MASTER_TAG_LIST
+        # process all tag value lines using specified tag formats in
+        # MASTER_TAG_LIST
         for line in lines:
             tag_object, tag, value = cls._preprocess_line(line)
             processed_value = tag_object.read(tag, value)
@@ -331,13 +453,17 @@ class JDFTXInfile(dict, MSONable):
             for filename in params["include"]:
                 _filename = filename
                 if not Path(_filename).exists():
-                    if not path_parent is None:
+                    if path_parent is not None:
                         _filename = path_parent / filename
                     if not Path(_filename).exists():
                         raise ValueError(
                             f"The include file {filename} ({_filename}) does not exist!"
                         )
-                params.update(cls.from_file(_filename, dont_require_structure=True, assign_path_parent=False))
+                params.update(
+                    cls.from_file(
+                        _filename, dont_require_structure=True, assign_path_parent=False
+                    )
+                )
             del params["include"]
 
         if (
@@ -347,63 +473,115 @@ class JDFTXInfile(dict, MSONable):
             and "ion-species" not in params
         ):
             raise ValueError("This input file is missing required structure tags")
-
-        # if 'lattice' in params and 'ion' in params:  #skips if reading a partial input file added using the include tag
-        #     structure = cls.to_pmg_structure(cls(params))
-
-        #     for tag, value in params.items():         #this will change with tag categories
-        #         #now correct the processing of tags that need to know the number and species of atoms in the system
-        #         #in order to parse their values, e.g. initial-magnetic-moments tag
-        #         tag_object = get_tag_object(tag)
-        #         if tag_object.defer_until_struc:
-        #             corrected_value = tag_object.read_with_structure(tag, value, structure)
-        #             params[tag] = corrected_value
-
         if sort_tags:
             params = {tag: params[tag] for tag in __TAG_LIST__ if tag in params}
         return cls(params)
 
     @classmethod
-    def to_JDFTXStructure(cls, JDFTXInfile, sort_structure: bool = False):
-        """Converts JDFTx lattice, lattice-scale, ion tags into JDFTXStructure, with Pymatgen structure as attribute"""
-        # use dict representation so it's easy to get the right column for moveScale, rather than checking for velocities
-        JDFTXInfile = cls.get_dict_representation(JDFTXInfile)
-        return JDFTXStructure._from_JDFTXInfile(
-            JDFTXInfile, sort_structure=sort_structure
+    def to_jdftxstructure(
+        cls, jdftxinfile: JDFTXInfile, sort_structure: bool = False
+    ) -> JDFTXStructure:
+        """Convert JDFTXInfile to JDFTXStructure object.
+
+        Converts JDFTx lattice, lattice-scale, ion tags into JDFTXStructure,
+        with Pymatgen structure as attribute.
+
+        Parameters
+        ----------
+        jdftxinfile : JDFTXInfile
+            JDFTXInfile object to convert.
+        sort_structure : bool, optional
+            Whether to sort the structure. Useful if species are not grouped
+            properly together. Defaults to False.
+        """
+        # use dict representation so it's easy to get the right column for
+        # moveScale, rather than checking for velocities
+        jdftxinfile_dict = cls.get_dict_representation(jdftxinfile)
+        return JDFTXStructure.from_jdftxinfile(
+            jdftxinfile_dict, sort_structure=sort_structure
         )
 
     @classmethod
-    def to_pmg_structure(cls, JDFTXInfile, sort_structure: bool = False):
-        """Converts JDFTx lattice, lattice-scale, ion tags into Pymatgen structure"""
-        # use dict representation so it's easy to get the right column for moveScale, rather than checking for velocities
-        JDFTXInfile = cls.get_dict_representation(JDFTXInfile)
-        return JDFTXStructure._from_JDFTXInfile(
-            JDFTXInfile, sort_structure=sort_structure
-        ).structure
+    def to_pmg_structure(
+        cls, jdftxinfile: JDFTXInfile, sort_structure: bool = False
+    ) -> Structure:
+        """Convert JDFTXInfile to pymatgen Structure object.
+
+        Converts JDFTx lattice, lattice-scale, ion tags into pymatgen Structure.
+
+        Parameters
+        ----------
+        jdftxinfile : JDFTXInfile
+            JDFTXInfile object to convert.
+        sort_structure : bool, optional
+            Whether to sort the structure. Useful if species are not grouped
+            properly together. Defaults to False.
+
+        Returns
+        -------
+        Structure
+        """
+        # use dict representation so it's easy to get the right column for
+        # moveScale, rather than checking for velocities
+        jdftxstructure = JDFTXStructure.from_jdftxinfile(
+            jdftxinfile.get_dict_representation(jdftxinfile),
+            sort_structure=sort_structure,
+        )
+        return jdftxstructure.structure
+        # JDFTXInfile = cls.get_dict_representation(JDFTXInfile)
+        # return JDFTXStructure._from_jdftxinfile(
+        #     JDFTXInfile, sort_structure=sort_structure
+        # ).structure
 
     @staticmethod
-    def _needs_conversion(conversion, value):
+    def _needs_conversion(
+        conversion: str, value: dict | list[dict] | list | list[list]
+    ) -> bool:
+        """Determine if a value needs to be converted.
+
+        Determine if a value needs to be converted.
+
+        Parameters
+        ----------
+        conversion : str
+            Conversion type.
+        value : dict | list[dict] | list | list[list]
+            Value to check.
+
+        Returns
+        -------
+        bool
+            Whether the value needs to be converted.
+        """
         # value will be in one of these formats:
         #  dict-to-list:
         #    dict
         #    list[dicts] (repeat tags in dict representation)
         #  list-to-dict:
         #    list
-        #    list[lists] (repeat tags in list representation or lattice in list representation)
+        #    list[lists] (repeat tags in list representation or lattice in list
+        #                 representation)
 
         if conversion == "list-to-dict":
             flag = False
         elif conversion == "dict-to-list":
             flag = True
 
-        if isinstance(value, dict) or all(
-            [isinstance(x, dict) for x in value]
-        ):  # value is like {'subtag': 'subtag_value'}
+        if isinstance(value, dict) or all(isinstance(x, dict) for x in value):
             return flag
         return not flag
 
     @classmethod
-    def get_list_representation(cls, jdftxinfile: JDFTXInfile):
+    def get_list_representation(cls, jdftxinfile: JDFTXInfile) -> JDFTXInfile:
+        """Convert JDFTXInfile object properties into list representation.
+
+        Convert JDFTXInfile object properties into list representation.
+
+        Parameters
+        ----------
+        jdftxinfile : JDFTXInfile
+            JDFTXInfile object to convert.
+        """
         reformatted_params = deepcopy(jdftxinfile.as_dict(skip_module_keys=True))
         # rest of code assumes lists are lists and not np.arrays
         reformatted_params = {
@@ -412,28 +590,47 @@ class JDFTXInfile(dict, MSONable):
         }
         for tag, value in reformatted_params.items():
             tag_object = get_tag_object(tag)
-            if tag_object.allow_list_representation and tag_object._is_tag_container:
-                if cls._needs_conversion("dict-to-list", value):
-                    reformatted_params.update(
-                        {tag: tag_object.get_list_representation(tag, value)}
-                    )
+            if all(
+                [
+                    tag_object.allow_list_representation,
+                    tag_object.is_tag_container,
+                    cls._needs_conversion("dict-to-list", value),
+                ]
+            ):
+                reformatted_params.update(
+                    {tag: tag_object.get_list_representation(tag, value)}
+                )
         return cls(reformatted_params)
 
     @classmethod
-    def get_dict_representation(cls, jdftxinfile: JDFTXInfile): # as list issue not resolved in reformatted_params - should it be? OR is that supposed to be resolved in the later lines?
+    def get_dict_representation(cls, jdftxinfile: JDFTXInfile) -> JDFTXInfile:
+        """Convert JDFTXInfile object properties into dict representation.
+
+        Convert JDFTXInfile object properties into dict representation.
+
+        Parameters
+        ----------
+        jdftxinfile : JDFTXInfile
+            JDFTXInfile object to convert.
+        """
         reformatted_params = deepcopy(jdftxinfile.as_dict(skip_module_keys=True))
         # Just to make sure only passing lists and no more numpy arrays
         reformatted_params = {
             k: v.tolist() if isinstance(v, np.ndarray) else v
             for k, v in reformatted_params.items()
-        } # rest of code assumes lists are lists and not np.arrays
+        }  # rest of code assumes lists are lists and not np.arrays
         for tag, value in reformatted_params.items():
             tag_object = get_tag_object(tag)
-            if tag_object.allow_list_representation and tag_object._is_tag_container:
-                if cls._needs_conversion("list-to-dict", value):
-                    reformatted_params.update(
-                        {tag: tag_object.get_dict_representation(tag, value)}
-                    )
+            if all(
+                [
+                    tag_object.allow_list_representation,
+                    tag_object.is_tag_container,
+                    cls._needs_conversion("list-to-dict", value),
+                ]
+            ):
+                reformatted_params.update(
+                    {tag: tag_object.get_dict_representation(tag, value)}
+                )
         return cls(reformatted_params)
 
     def validate_tags(
@@ -441,55 +638,76 @@ class JDFTXInfile(dict, MSONable):
         try_auto_type_fix: bool = False,
         error_on_failed_fix: bool = True,
         return_list_rep: bool = False,
-    ):
+    ) -> None:
+        """Validate the tags in the JDFTXInfile.
+
+        Validate the tags in the JDFTXInfile. If try_auto_type_fix is True, will
+        attempt to fix the tags. If error_on_failed_fix is True, will raise an
+        error if the tags cannot be fixed. If return_list_rep is True, will
+        return the tags in list representation.
+
+        Parameters
+        ----------
+        try_auto_type_fix : bool, optional
+            Whether to attempt to fix the tags, by default False
+        error_on_failed_fix : bool, optional
+            Whether to raise an error if the tags cannot be fixed, by default True
+        return_list_rep : bool, optional
+            Whether to return the tags in list representation, by default False
+        """
         for tag in self:
             tag_object = get_tag_object(tag)
-            checked_tags, is_tag_valid, value = tag_object.validate_value_type(
+            checked_tag, is_tag_valid, value = tag_object.validate_value_type(
                 tag, self[tag], try_auto_type_fix=try_auto_type_fix
             )
-            if isinstance(is_tag_valid, list):
-                checked_tags = flatten_list(tag, checked_tags)
-                is_tag_valid = flatten_list(tag, is_tag_valid)
-                should_warn = not all(is_tag_valid)
-            else:
-                should_warn = not is_tag_valid
-
-            if return_list_rep:
-                if (
-                    tag_object.allow_list_representation
-                ):  # converts newly formatted tag into list repr
-                    value = tag_object.get_list_representation(tag, value)
+            should_warn = not is_tag_valid
+            if return_list_rep and tag_object.allow_list_representation:
+                value = tag_object.get_list_representation(tag, value)
             if error_on_failed_fix and should_warn and try_auto_type_fix:
                 raise ValueError(
-                    f"The {tag} tag with value:\n{self[tag]}\ncould not be fixed!"
+                    f"The {tag} tag with value:\n{self[tag]}\ncould not be \
+                        fixed!"
                 )
             if try_auto_type_fix and is_tag_valid:
                 self.update({tag: value})
             if should_warn:
-                warnmsg = f"The {tag} tag with value:\n{self[tag]}\nhas incorrect typing!\n    Subtag IsValid?\n"
-                for i in range(len(checked_tags)):
-                    warnmsg += f"    {checked_tags[i]} {is_tag_valid[i]}\n"
-                warnings.warn(warnmsg)
+                warnmsg = f"The {tag} tag with value:\n{self[tag]}\nhas \
+                    incorrect typing!\n    Subtag IsValid?\n"
+                if any(
+                    isinstance(tag_object, tc)
+                    for tc in [TagContainer, DumpTagContainer, BoolTagContainer]
+                ):
+                    warnmsg += "(Check earlier warnings for more details)\n"
+                warnings.warn(warnmsg, stacklevel=2)
 
 
 @dataclass
 class JDFTXStructure(MSONable):
-    """Object for representing the data in JDFTXStructure tags
+    """Object for representing the data in JDFTXStructure tags.
+
+    Object for representing the data in JDFTXStructure tags.
 
     Attributes
     ----------
-        structure: Associated Structure.
-        selective_dynamics: Selective dynamics attribute for each site if available.
-            A Nx1 array of booleans.
-        sort_structure (bool, optional): Whether to sort the structure. Useful if species
-            are not grouped properly together. Defaults to False.
+    structure: Structure
+        Associated Structure.
+    selective_dynamics: ArrayLike
+        Selective dynamics attribute for each site if available. Shape Nx1
+    sort_structure: bool
+        Whether to sort the structure. Useful if species are not grouped
+        properly together. Defaults to False.
     """
 
-    structure: Structure
+    structure: Structure = None
     selective_dynamics: ArrayLike | None = None
     sort_structure: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Post init function for JDFTXStructure.
+
+        Post init function for JDFTXStructure. Asserts self.structure is
+        ordered, and adds selective dynamics if needed.
+        """
         if self.structure.is_ordered:
             site_properties = {}
             if self.selective_dynamics is not None:
@@ -497,43 +715,112 @@ class JDFTXStructure(MSONable):
                 if not selective_dynamics.all():
                     site_properties["selective_dynamics"] = selective_dynamics
 
-            # create new copy of structure so can add selective dynamics and sort atoms if needed
+            # create new copy of structure so can add selective dynamics and
+            # sort atoms if needed
             structure = Structure.from_sites(self.structure)
             self.structure = structure.copy(site_properties=site_properties)
             if self.sort_structure:
                 self.structure = self.structure.get_sorted_structure()
         else:
             raise ValueError(
-                "Disordered structure with partial occupancies cannot be converted into JDFTXStructure!"
+                "Disordered structure with partial occupancies cannot be \
+                    converted into JDFTXStructure!"
             )
 
     def __repr__(self) -> str:
-        return self.get_str()
+        """Return representation of JDFTXStructure file.
+
+        Return representation of JDFTXStructure file.
+
+        Returns
+        -------
+        str
+            Representation of JDFTXStructure file.
+        """
+        return f"JDFTXStructure({self.get_str()})"
 
     def __str__(self) -> str:
-        """String representation of Poscar file."""
+        """Return string representation of JDFTXStructure file.
+
+        Return string representation of JDFTXStructure file.
+
+        Returns
+        -------
+        str
+            String representation of JDFTXStructure file.
+        """
         return self.get_str()
 
     @property
     def natoms(self) -> list[int]:
-        """Sequence of number of sites of each type associated with JDFTXStructure"""
-        syms: list[str] = [site.specie.symbol for site in self.structure]
+        """Return count for each atom type.
+
+        Return sequence of number of sites of each type associated with
+        JDFTXStructure
+
+        Returns
+        -------
+        list[int]
+            Sequence of number of sites of each type associated with
+            JDFTXStructure
+        """
+        syms: list[str] = [site.species.symbol for site in self.structure]
         return [len(tuple(a[1])) for a in itertools.groupby(syms)]
 
     @classmethod
-    def from_str(cls, data: str):
-        return cls.from_JDFTXInfile(JDFTXInfile.from_str(data))
+    def from_str(cls, data: str) -> JDFTXStructure:
+        """Read JDFTXStructure from string.
+
+        Read JDFTXStructure from string.
+
+        Parameters
+        ----------
+        data : str
+            String to read from.
+
+        Returns
+        -------
+        JDFTXStructure
+        """
+        return cls.from_jdftxinfile(JDFTXInfile.from_str(data))
 
     @classmethod
-    def from_file(cls, filename: str):
-        return cls._from_JDFTXInfile(JDFTXInfile.from_file(filename))
+    def from_file(cls, filename: str) -> JDFTXStructure:
+        """Read JDFTXStructure from file.
+
+        Read JDFTXStructure from file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to read from.
+
+        Returns
+        -------
+        JDFTXStructure
+        """
+        return cls.from_jdftxinfile(JDFTXInfile.from_file(filename))
 
     @classmethod
-    def _from_JDFTXInfile(cls, JDFTXInfile, sort_structure: bool = False):
-        lattice = np.array([JDFTXInfile["lattice"][x] for x in JDFTXInfile["lattice"]])
-        if "latt-scale" in JDFTXInfile:
+    def from_jdftxinfile(
+        cls, jdftxinfile: JDFTXInfile, sort_structure: bool = False
+    ) -> JDFTXStructure:
+        """Get JDFTXStructure from JDFTXInfile.
+
+        Get JDFTXStructure from JDFTXInfile.
+
+        Parameters
+        ----------
+        jdftxinfile : JDFTXInfile
+            JDFTXInfile object
+        sort_structure : bool, optional
+            Whether to sort the structure. Useful if species are not grouped
+            properly together as JDFTx output will have species sorted.
+        """
+        lattice = np.array([jdftxinfile["lattice"][x] for x in jdftxinfile["lattice"]])
+        if "latt-scale" in jdftxinfile:
             latt_scale = np.array(
-                [[JDFTXInfile["latt-scale"][x] for x in ["s0", "s1", "s2"]]]
+                [[jdftxinfile["latt-scale"][x] for x in ["s0", "s1", "s2"]]]
             )
             lattice *= latt_scale
         lattice = lattice.T  # convert to row vector format
@@ -541,15 +828,15 @@ class JDFTXStructure(MSONable):
             const.value("Bohr radius") * 10**10
         )  # Bohr radius in Ang; convert to Ang
 
-        atomic_symbols = [x["species-id"] for x in JDFTXInfile["ion"]]
-        coords = np.array([[x["x0"], x["x1"], x["x2"]] for x in JDFTXInfile["ion"]])
-        selective_dynamics = np.array([x["moveScale"] for x in JDFTXInfile["ion"]])
+        atomic_symbols = [x["species-id"] for x in jdftxinfile["ion"]]
+        coords = np.array([[x["x0"], x["x1"], x["x2"]] for x in jdftxinfile["ion"]])
+        selective_dynamics = np.array([x["moveScale"] for x in jdftxinfile["ion"]])
 
         coords_are_cartesian = False  # is default for JDFTx
-        if "coords-type" in JDFTXInfile:
-            coords_are_cartesian = JDFTXInfile["coords-type"] == "Cartesian"
+        if "coords-type" in jdftxinfile:
+            coords_are_cartesian = jdftxinfile["coords-type"] == "Cartesian"
 
-        struct = Structure(
+        struct: Structure = Structure(
             lattice,
             atomic_symbols,
             coords,
@@ -560,17 +847,22 @@ class JDFTXStructure(MSONable):
         return cls(struct, selective_dynamics, sort_structure=sort_structure)
 
     def get_str(self, in_cart_coords: bool = False) -> str:
-        """Return a string to be written as JDFTXInfile tags. Allows extra options as
-        compared to calling str(JDFTXStructure) directly
+        """Return a string to be written as JDFTXInfile tags.
 
-        Args:
-            in_cart_coords (bool): Whether coordinates are output in direct or Cartesian
+        Return a string to be written as JDFTXInfile tags. Allows extra options
+        as compared to calling str(JDFTXStructure) directly.
+
+        Parameters
+        ----------
+        in_cart_coords: bool
+            Whether coordinates are output in direct or Cartesian
 
         Returns
         -------
-            str: representation of JDFTXInfile structure tags
+        str
+            representation of JDFTXInfile structure tags
         """
-        JDFTX_tagdict = {}
+        jdftx_tag_dict = {}
 
         lattice = np.copy(self.structure.lattice.matrix)
         lattice = lattice.T  # transpose to get into column-vector format
@@ -578,21 +870,31 @@ class JDFTXStructure(MSONable):
             const.value("Bohr radius") * 10**10
         )  # Bohr radius in Ang; convert to Bohr
 
-        JDFTX_tagdict["lattice"] = lattice
-        JDFTX_tagdict["ion"] = []
+        jdftx_tag_dict["lattice"] = lattice
+        jdftx_tag_dict["ion"] = []
         for i, site in enumerate(self.structure):
             coords = site.coords if in_cart_coords else site.frac_coords
             if self.selective_dynamics is not None:
                 sd = self.selective_dynamics[i]
             else:
                 sd = 1
-            JDFTX_tagdict["ion"].append([site.label, *coords, sd])
+            jdftx_tag_dict["ion"].append([site.label, *coords, sd])
 
-        return str(JDFTXInfile.from_dict(JDFTX_tagdict))
+        return str(JDFTXInfile.from_dict(jdftx_tag_dict))
 
     def write_file(self, filename: PathLike, **kwargs) -> None:
-        """Write JDFTXStructure to a file. The supported kwargs are the same as those for
-        the JDFTXStructure.get_str method and are passed through directly.
+        """Write JDFTXStructure to a file.
+
+        Write JDFTXStructure to file. The supported kwargs are the same as
+        those for the JDFTXStructure.get_str method and are passed through
+        directly.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to write to.
+        **kwargs
+            Kwargs to pass to JDFTXStructure.get_str.
         """
         with zopen(filename, mode="wt") as file:
             file.write(self.get_str(**kwargs))
@@ -608,13 +910,18 @@ class JDFTXStructure(MSONable):
 
     @classmethod
     def from_dict(cls, params: dict) -> Self:
-        """
-        Args:
-            dct (dict): Dict representation.
+        """Get JDFTXStructure from dict.
+
+        Get JDFTXStructure from dict.
+
+        Parameters
+        ----------
+        params : dict
+            Serialized JDFTXStructure
 
         Returns
         -------
-            JDFTXStructure
+        JDFTXStructure
         """
         return cls(
             Structure.from_dict(params["structure"]),
