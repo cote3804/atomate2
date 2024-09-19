@@ -148,7 +148,7 @@ class JDFTXOutfileSlice(ClassPrintFormatter):
     total_electrons_uncharged: int = None
     semicore_electrons_uncharged: int = None
     valence_electrons_uncharged: int = None
-    Nbands: int = None
+    nbands: int = None
 
     atom_elements: list = None
     atom_elements_int: list = None

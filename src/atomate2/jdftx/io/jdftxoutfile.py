@@ -8,20 +8,23 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
-import numpy as np
 from monty.io import zopen
 
 from atomate2.jdftx.io.jdftxoutfileslice import JDFTXOutfileSlice
 from atomate2.jdftx.io.jdftxoutfileslice_helpers import get_start_lines
-from atomate2.jdftx.io.jminsettings import (
-    JMinSettingsElectronic,
-    JMinSettingsFluid,
-    JMinSettingsIonic,
-    JMinSettingsLattice,
-)
-from atomate2.jdftx.io.joutstructures import JOutStructures
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    from atomate2.jdftx.io.jminsettings import (
+        JMinSettingsElectronic,
+        JMinSettingsFluid,
+        JMinSettingsIonic,
+        JMinSettingsLattice,
+    )
+    from atomate2.jdftx.io.joutstructures import JOutStructures
 
 
 def check_file_exists(func: Callable) -> Any:
@@ -710,16 +713,16 @@ class JDFTXOutfile:
         )
 
     @property
-    def Nbands(self) -> int:
+    def nbands(self) -> int:
         """
         Return Nbands from most recent JOutStructure.
 
         Return Nbands from most recent JOutStructure.
         """
         if len(self.slices):
-            return self.slices[-1].Nbands
+            return self.slices[-1].nbands
         raise AttributeError(
-            "Property Nbands inaccessible due to empty \
+            "Property nbands inaccessible due to empty \
                              slices class field"
         )
 
@@ -962,7 +965,8 @@ class JDFTXOutfile:
     def __dir__(self) -> list:
         """List attributes.
 
-        Returns a list of attributes for the object, including those from self.slices[-1].
+        Returns a list of attributes for the object, including those from
+        self.slices[-1].
 
         Returns
         -------
@@ -970,8 +974,8 @@ class JDFTXOutfile:
             A list of attribute names
         """
         # Get the default attributes
-        default_attrs = super().__dir__()
-        # Get the attributes from self.slices[-1]
-        slice_attrs = dir(self.slices[-1])
+        default_attrs = dir(self)
+        # Get the attributes from self.slices[-1] if slices is not empty
+        slice_attrs = dir(self.slices[-1]) if self.slices else []
         # Combine and return unique attributes
         return list(set(default_attrs + slice_attrs))

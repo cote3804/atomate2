@@ -7,11 +7,12 @@ JOutStructure.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
+if TYPE_CHECKING:
+    import numpy as np
 
-from atomate2.jdftx.io.jeiters import JEiters
+    from atomate2.jdftx.io.jeiters import JEiters
 from atomate2.jdftx.io.joutstructure import JOutStructure
 from atomate2.jdftx.io.joutstructure_helpers import (
     correct_iter_type,
@@ -254,7 +255,7 @@ class JOutStructures:
         )
 
     @property
-    def E(self) -> float:
+    def e(self) -> float:
         """
         Return E from most recent JOutStructure.
 
@@ -376,7 +377,8 @@ class JOutStructures:
     def __dir__(self) -> list:
         """List attributes.
 
-        Returns a list of attributes for the object, including those from self.slices[-1].
+        Returns a list of attributes for the object, including those from
+        self.slices[-1].
 
         Returns
         -------
@@ -384,9 +386,9 @@ class JOutStructures:
             A list of attribute names
         """
         # Get the default attributes
-        default_attrs = super().__dir__()
-        # Get the attributes from self.slices[-1]
-        slice_attrs = dir(self.slices[-1])
+        default_attrs = dir(self)
+        # Get the attributes from self.slices[-1] if slices is not empty
+        slice_attrs = dir(self.slices[-1]) if self.slices else []
         # Combine and return unique attributes
         return list(set(default_attrs + slice_attrs))
 
