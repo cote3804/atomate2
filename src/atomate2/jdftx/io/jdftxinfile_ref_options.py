@@ -525,8 +525,8 @@ func_xc_options = [
 ]
 
 
-JDFTXDumpFreqOptions = ["Electronic", "End", "Fluid", "Gummel", "Init", "Ionic"]
-JDFTXDumpVarOptions = [
+jdftxdumpfreqoptions = ["Electronic", "End", "Fluid", "Gummel", "Init", "Ionic"]
+jdftxdumpvaroptions = [
     "BandEigs",  # Band Eigenvalues
     "BandProjections",  # Projections of each band state against each
     # atomic orbital
@@ -628,7 +628,7 @@ JDFTXDumpVarOptions = [
 ]
 # simple dictionaries deepcopied multiple times into MASTER_TAG_LIST later for
 # different tags
-JDFTXMinimize_subtagdict = {
+jdftxminimize_subtagdict = {
     "alphaTincreaseFactor": FloatTag(),
     "alphaTmin": FloatTag(),
     "alphaTreduceFactor": FloatTag(),
@@ -656,7 +656,7 @@ JDFTXMinimize_subtagdict = {
     "wolfeEnergy": FloatTag(),
     "wolfeGradient": FloatTag(),
 }
-JDFTXFluid_subtagdict = {
+jdftxfluid_subtagdict = {
     "epsBulk": FloatTag(),
     "epsInf": FloatTag(),
     "epsLJ": FloatTag(),

@@ -7,19 +7,18 @@ This module contains;
     MASTER_TAG_LIST given a tag name.
 """
 
-from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any
 
 from atomate2.jdftx.io.jdftxinfile_ref_options import (
-    JDFTXDumpFreqOptions,
-    JDFTXDumpVarOptions,
-    JDFTXFluid_subtagdict,
-    JDFTXMinimize_subtagdict,
     func_c_options,
     func_options,
     func_x_options,
     func_xc_options,
+    jdftxdumpfreqoptions,
+    jdftxdumpvaroptions,
+    jdftxfluid_subtagdict,
+    jdftxminimize_subtagdict,
 )
 
 from .generic_tags import (
@@ -590,19 +589,19 @@ MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
         "ionic-minimize": TagContainer(
             multiline_tag=True,
             subtags={
-                **deepcopy(JDFTXMinimize_subtagdict),
+                **deepcopy(jdftxminimize_subtagdict),
             },
         ),
         "lattice-minimize": TagContainer(
             multiline_tag=True,
             subtags={
-                **deepcopy(JDFTXMinimize_subtagdict),
+                **deepcopy(jdftxminimize_subtagdict),
             },
         ),
         "electronic-minimize": TagContainer(
             multiline_tag=True,
             subtags={
-                **deepcopy(JDFTXMinimize_subtagdict),
+                **deepcopy(jdftxminimize_subtagdict),
             },
         ),
         "electronic-scf": TagContainer(
@@ -626,7 +625,7 @@ MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
         "fluid-minimize": TagContainer(
             multiline_tag=True,
             subtags={
-                **deepcopy(JDFTXMinimize_subtagdict),
+                **deepcopy(jdftxminimize_subtagdict),
             },
         ),
         "davidson-band-ratio": FloatTag(),
@@ -713,7 +712,7 @@ MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
                             ],
                             write_tagname=False,
                         ),
-                        **deepcopy(JDFTXFluid_subtagdict),
+                        **deepcopy(jdftxfluid_subtagdict),
                     }
                 ),
                 TagContainer(
@@ -752,7 +751,7 @@ MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
                             ],
                             write_tagname=False,
                         ),
-                        **deepcopy(JDFTXFluid_subtagdict),
+                        **deepcopy(jdftxfluid_subtagdict),
                     }
                 ),
             ],
@@ -772,7 +771,7 @@ MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
                     ],
                     write_tagname=False,
                 ),
-                **deepcopy(JDFTXFluid_subtagdict),
+                **deepcopy(jdftxfluid_subtagdict),
             }
         ),
         "fluid-cation": TagContainer(
@@ -790,7 +789,7 @@ MASTER_TAG_LIST: dict[str, dict[str, Any]] = {
                     ],
                     write_tagname=False,
                 ),
-                **deepcopy(JDFTXFluid_subtagdict),
+                **deepcopy(jdftxfluid_subtagdict),
             }
         ),
         "fluid-dielectric-constant": TagContainer(
@@ -1214,18 +1213,18 @@ def get_dump_tag_container() -> DumpTagContainer:
         The dump tag container.
     """
     # subtags = {}
-    subtags: Mapping[str, BoolTagContainer] = {}
-    for freq in JDFTXDumpFreqOptions:
-        subsubtags = {}
-        for var in JDFTXDumpVarOptions:
+    subtags2: dict[str, AbstractTag] = {}
+    for freq in jdftxdumpfreqoptions:
+        subsubtags: dict[str, AbstractTag] = {}
+        for var in jdftxdumpvaroptions:
             subsubtags[var] = BoolTag(write_value=False)
         # subtags[freq] = BoolTagContainer(
         #     subtags=subsubtags, write_tagname=True, can_repeat=True
         # )
-        subtags[freq] = BoolTagContainer(
+        subtags2[freq] = BoolTagContainer(
             subtags=subsubtags, write_tagname=True, can_repeat=True
         )
-    return DumpTagContainer(subtags=subtags, write_tagname=True, can_repeat=True)
+    return DumpTagContainer(subtags=subtags2, write_tagname=True, can_repeat=True)
 
 
 MASTER_TAG_LIST["export"]["dump"] = get_dump_tag_container()

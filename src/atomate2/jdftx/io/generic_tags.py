@@ -1,21 +1,45 @@
+"""Module for class objects for containing JDFTx tags.
+
+This module contains class objects for containing JDFTx tags. These class objects
+are used to validate the type of the value for the tag, read the value string for
+the tag, write the tag and its value as a string, and get the token length of the tag.
+"""
+
 from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from pymatgen.core import Structure
+
+if TYPE_CHECKING:
+    from pymatgen.core import Structure
 
 __author__ = "Jacob Clary"
 
 
-def flatten_list(tag: str, list_of_lists: List[Any]) -> List[Any]:
-    """Flattens list of lists into a single list, then stops"""
+def flatten_list(tag: str, list_of_lists: list[Any]) -> list[Any]:
+    """Flatten list of lists into a single list, then stop.
+
+    Flatten list of lists into a single list, then stop.
+
+    Parameters
+    ----------
+    tag : str
+        The tag to flatten the list of lists for.
+    list_of_lists : list[Any]
+        The list of lists to flatten.
+
+    Returns
+    -------
+    list[Any]
+        The flattened list.
+    """
     if not isinstance(list_of_lists, list):
-        raise ValueError(f"{tag}: You must provide a list to flatten_list()!")
+        raise TypeError(f"{tag}: You must provide a list to flatten_list()!")
     flist = []
     for v in list_of_lists:
         if isinstance(v, list):
@@ -26,9 +50,21 @@ def flatten_list(tag: str, list_of_lists: List[Any]) -> List[Any]:
 
 
 class ClassPrintFormatter:
-    """Generic means of printing class to command line in readable format"""
+    """Generic class for printing to command line in readable format.
+
+    Generic class for printing to command line in readable format.
+    """
 
     def __str__(self) -> str:
+        """Print the class to the command line in a readable format.
+
+        Print the class to the command line in a readable format.
+
+        Returns
+        -------
+        str
+            The class in a readable format.
+        """
         return f"{self.__class__}\n" + "\n".join(
             f"{item} = {self.__dict__[item]}" for item in sorted(self.__dict__)
         )
@@ -98,7 +134,7 @@ class AbstractTag(ClassPrintFormatter, ABC):
         """
         if self.can_repeat:
             self._validate_repeat(tag, value)
-            is_valid = all([isinstance(x, type_check) for x in value])
+            is_valid = all(isinstance(x, type_check) for x in value)
         else:
             is_valid = isinstance(value, type_check)
 
@@ -109,7 +145,7 @@ class AbstractTag(ClassPrintFormatter, ABC):
                 else:
                     value = self.read(tag, str(value))
                 tag, is_valid, value = self._validate_value_type(type_check, tag, value)
-            except Exception:
+            except (TypeError, ValueError):
                 warnings.warn(
                     f"Could not fix the typing for {tag} {value}!", stacklevel=2
                 )
@@ -126,6 +162,10 @@ class AbstractTag(ClassPrintFormatter, ABC):
     @abstractmethod
     def write(self, tag: str, value: Any) -> str:
         """Write the tag and its value as a string."""
+
+    @abstractmethod
+    def get_token_len(self) -> int:
+        """Get the token length of the tag."""
 
     def _write(self, tag: str, value: Any, multiline_override: bool = False) -> str:
         tag_str = f"{tag} " if self.write_tagname else ""
@@ -186,7 +226,11 @@ class BoolTag(AbstractTag):
     )
     _TF_options: dict[str, dict] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize the _TF_options attribute.
+
+        Initialize the _TF_options attribute.
+        """
         self._TF_options = {
             "read": self._TF_read_options,
             "write": self._TF_write_options,
@@ -222,6 +266,23 @@ class BoolTag(AbstractTag):
             bool, tag, value, try_auto_type_fix=try_auto_type_fix
         )
 
+    def raise_value_error(self, tag: str, value: str) -> None:
+        """Raise a ValueError for the value string.
+
+        Raise a ValueError for the value string.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to raise the ValueError for.
+        value : str
+            The value string to raise the ValueError for.
+        """
+        raise ValueError(
+            f"The value '{value}' was provided to {tag}, it is not \
+                acting like a boolean"
+        )
+
     def read(self, tag: str, value: str) -> bool:
         """Read the value string for this tag.
 
@@ -248,13 +309,12 @@ class BoolTag(AbstractTag):
                     # value was provided but the tag was present
                     value = "yes"
                 else:
-                    raise ValueError(
-                        f"The value '{value}' was provided to {tag}, it is not \
-                            acting like a boolean"
-                    )
+                    self.raise_value_error(tag, value)
             return self._TF_options["read"][value]
-        except:
-            raise ValueError(f"Could not set '{value}' as True/False for {tag}!")
+        except (ValueError, TypeError) as err:
+            raise ValueError(
+                f"Could not set '{value}' as True/False for {tag}!"
+            ) from err
 
     def write(self, tag: str, value: Any) -> str:
         """Write the tag and its value as a string.
@@ -298,7 +358,7 @@ class StrTag(AbstractTag):
     options: list = None
 
     def validate_value_type(
-        self, tag, value, try_auto_type_fix: bool = False
+        self, tag: str, value: Any, try_auto_type_fix: bool = False
     ) -> tuple[str, bool, Any]:
         """Validate the type of the value for this tag.
 
@@ -347,15 +407,15 @@ class StrTag(AbstractTag):
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
             value = str(value)
-        except:
-            raise ValueError(f"Could not set '{value}' to a str for {tag}!")
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Could not set '{value}' to a str for {tag}!") from err
         if self.options is None or value in self.options:
             return value
         raise ValueError(
             f"The '{value}' string must be one of {self.options} for {tag}"
         )
 
-    def write(self, tag: str, value) -> str:
+    def write(self, tag: str, value: Any) -> str:
         """Write the tag and its value as a string.
 
         Write the tag and its value as a string.
@@ -389,8 +449,13 @@ class StrTag(AbstractTag):
 
 @dataclass(kw_only=True)
 class IntTag(AbstractTag):
+    """Tag for integer values in JDFTx input files.
+
+    Tag for integer values in JDFTx input files.
+    """
+
     def validate_value_type(
-        self, tag: str, value, try_auto_type_fix: bool = False
+        self, tag: str, value: Any, try_auto_type_fix: bool = False
     ) -> tuple[str, bool, Any]:
         """Validate the type of the value for this tag.
 
@@ -439,10 +504,10 @@ class IntTag(AbstractTag):
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
             return int(float(value))
-        except:
-            raise ValueError(f"Could not set '{value}' to a int for {tag}!")
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Could not set '{value}' to a int for {tag}!") from err
 
-    def write(self, tag: str, value) -> str:
+    def write(self, tag: str, value: Any) -> str:
         """Write the tag and its value as a string.
 
         Write the tag and its value as a string.
@@ -484,7 +549,7 @@ class FloatTag(AbstractTag):
     prec: int = field(default=None)
 
     def validate_value_type(
-        self, tag, value, try_auto_type_fix: bool = False
+        self, tag: str, value: Any, try_auto_type_fix: bool = False
     ) -> tuple[str, bool, Any]:
         """Validate the type of the value for this tag.
 
@@ -532,9 +597,10 @@ class FloatTag(AbstractTag):
         if len(value.split()) > 1:
             raise ValueError(f"'{value}' for {tag} should not have a space in it!")
         try:
-            return float(value)  # can accept np.nan
-        except:
-            raise ValueError(f"Could not set '{value}' to a float for {tag}!")
+            value_float = float(value)
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Could not set '{value}' to a float for {tag}!") from err
+        return value_float
 
     def write(self, tag: str, value: Any) -> str:
         """Write the tag and its value as a string.
@@ -640,8 +706,8 @@ class InitMagMomTag(AbstractTag):
         """
         try:
             value = str(value)
-        except:
-            raise ValueError(f"Could not set '{value}' to a str for {tag}!")
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Could not set '{value}' to a str for {tag}!") from err
         return value
 
     def write(self, tag: str, value: Any) -> str:
@@ -994,9 +1060,9 @@ class TagContainer(AbstractTag):
             "Could not determine TagContainer representation, something is wrong"
         )
 
-    def _make_list(self, value: Any) -> list:
+    def _make_list(self, value: dict) -> list:
         value_list = []
-        for subtag, subtag_value in value.items():
+        for subtag in value:
             subtag_type = self.subtags[subtag]
             if subtag_type.allow_list_representation:
                 # this block deals with making list representations of any
@@ -1372,6 +1438,32 @@ class MultiformatTag(AbstractTag):
         format_index, _ = self._determine_format_option(tag, value)
         return self.format_options[format_index].write(tag, value)
 
+    def get_token_len(self) -> int:
+        """Get the token length of the tag.
+
+        Get the token length of the tag.
+
+        Returns
+        -------
+        int
+            The token length of the tag.
+        """
+        raise NotImplementedError(
+            "This method is not supposed to be called\
+                                  directonly on MultiformatTag objects!"
+        )
+        # min_token_len = int(self.write_tagname)  # length of value subtags
+        # # added next
+        # for subtag_type in self.subtags.values():
+        #     subtag_token_len = (
+        #         subtag_type.get_token_len()
+        #     )  # recursive for nested TagContainers
+        #     if (
+        #         not subtag_type.optional
+        #     ):  # TagContainers could be longer with optional subtags included
+        #         min_token_len += subtag_token_len
+        # return min_token_len
+
 
 @dataclass
 class BoolTagContainer(TagContainer):
@@ -1381,6 +1473,10 @@ class BoolTagContainer(TagContainer):
     are freqs for dump, and all values for these tags are boolean values that
     are read given the existence of their "var" name.
     """
+
+    # Leaving this as a warning, it confuses the hell out of pre-commit
+    # even if it is correct.
+    # subtags: dict[str, BoolTag] = None
 
     def read(self, tag: str, value_str: str) -> dict:
         """Read the value string for this tag.
@@ -1429,6 +1525,8 @@ class DumpTagContainer(TagContainer):
 
     This class is used to handle the "dump" tag.
     """
+
+    # subtags: dict[str, BoolTagContainer] = None
 
     def read(self, tag: str, value_str: str) -> dict:
         """Read the value string for this tag.
