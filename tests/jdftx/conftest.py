@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal
 import pytest
 from jobflow import CURRENT_JOB
 from monty.os.path import zpath as monty_zpath
-from pymatgen.io.jdftx.jdftxinfile import JDFTXInfile
+from pymatgen.io.jdftx.inputs import JDFTXInfile
 
 import atomate2.jdftx.jobs.base
 import atomate2.jdftx.run
@@ -42,8 +42,16 @@ def mock_cwd(monkeypatch, request):
     mock_path = (
         Path(__file__).resolve().parent / f"../test_data/jdftx/{test_name}"
     ).resolve()
-    monkeypatch.setattr(os, "getcwd", lambda: mock_path)
+    monkeypatch.setattr(os, "getcwd", lambda: str(mock_path))
 
+@pytest.fixture(params=["sp_test", "ionicmin_test", "latticemin_test"])
+def task_name(request):
+    task_table = {
+        "sp_test": "Single Point",
+        "ionicmin_test": "Ionic Optimization",
+        "latticemin_test": "Lattice Optimization"
+    }
+    return task_table[request.param]
 
 @pytest.fixture
 def mock_filenames(monkeypatch):
