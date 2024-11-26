@@ -9,7 +9,8 @@ from atomate2.jdftx.sets.core import (
     LatticeMinSetGenerator,
     SinglePointSetGenerator,
 )
-
+from pymatgen.core import Structure
+import numpy as np
 
 @pytest.mark.parametrize("mock_cwd", ["sp_test"], indirect=True)
 def test_sp_maker(mock_jdftx, si_structure, mock_cwd, mock_filenames, clean_dir):
@@ -63,3 +64,4 @@ def test_latticemin_maker(
     responses = run_locally(job, create_folders=True, ensure_success=True)
     output1 = responses[job.uuid][1].output
     assert isinstance(output1, TaskDoc)
+

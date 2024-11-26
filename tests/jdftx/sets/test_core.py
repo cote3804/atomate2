@@ -6,6 +6,9 @@ from atomate2.jdftx.sets.core import (
     LatticeMinSetGenerator,
     SinglePointSetGenerator,
 )
+import numpy as np
+from pymatgen.core import Structure
+from typing import Any
 
 
 @pytest.fixture
@@ -43,3 +46,12 @@ def test_latticemin_generator(si_structure, basis_and_potential):
     input_set = gen.get_input_set(si_structure)
     jdftx_input = input_set.jdftxinput
     assert jdftx_input["lattice-minimize"]["nIterations"] == 100
+
+
+def test_initmagmom(si_structure: Structure, basis_and_potential: dict[Any]):
+    natoms = len(si_structure)
+    si_structure.add_site_property("magmom", np.ones(len(si_structure)))
+    gen = LatticeMinSetGenerator(user_settings=basis_and_potential)
+    input_set = gen.get_input_set(si_structure)
+    jdftx_input = input_set.jdftxinput
+    assert jdftx_input["initial-magnetic-moments"].strip() == "Si " + " ".join(["1.0"] * natoms)

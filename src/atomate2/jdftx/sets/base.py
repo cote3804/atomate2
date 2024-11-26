@@ -341,7 +341,7 @@ class JdftxInputGenerator(InputGenerator):
         # check if user set JFDTx magnetic tags and return if true
         if any(
             [i in ["initial-magnetic-moments", "elec-initial-magnetization"]
-            for i in self.settings.keys()]
+            for i in self.user_settings.keys()]
             ):
             return
         # if magmoms set on structure, build JDFTx tag
@@ -358,6 +358,12 @@ class JdftxInputGenerator(InputGenerator):
             tag_str = ""
             for element, magmom_list in magmoms.items():
                 tag_str += f"{element} " + " ".join(list(map(str,magmom_list))) + " "
+        # Check the if set from default settings
+        elif any(
+            [i in ["initial-magnetic-moments", "elec-initial-magnetization"] 
+             for i in self.settings.keys()]
+            ):
+            return
         # set magmoms to +5 for all metals in structure.
         else:
             magmoms = defaultdict(list)
