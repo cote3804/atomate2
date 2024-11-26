@@ -338,7 +338,7 @@ class JdftxInputGenerator(InputGenerator):
         None
         """
         
-        # check if user set JFDTx magnetic tags and return if true
+        # check if user set JFDTx magnetic tags in user_settings and return if true
         if any(
             [i in ["initial-magnetic-moments", "elec-initial-magnetization"]
             for i in self.user_settings.keys()]
