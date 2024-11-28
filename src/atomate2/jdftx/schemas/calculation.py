@@ -185,7 +185,7 @@ class CalculationOutput(BaseModel):
         else:
             forces = None
         if hasattr(optimized_structure, "stress"):
-            if optimized_structure.stress == None:
+            if optimized_structure.stress is None:
                 stress = None
             else:
                 stress = optimized_structure.stress.tolist()
