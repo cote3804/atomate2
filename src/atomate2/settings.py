@@ -271,6 +271,7 @@ class Atomate2Settings(BaseSettings):
 
         new_values = {}
         if config_file_path.exists():
+            print("using default stuff for Atoamte2Settings")
             if config_file_path.stat().st_size == 0:
                 warnings.warn(
                     f"Using {env_var_name} at {config_file_path} but it's empty",
