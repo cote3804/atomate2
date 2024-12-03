@@ -12,6 +12,8 @@ from pymatgen.io.jdftx.inputs import JDFTXInfile
 from pymatgen.io.jdftx.outputs import JDFTXOutfile
 from pymatgen.io.jdftx.joutstructure import JOutStructure
 from pymatgen.core.trajectory import Trajectory
+from atomate2 import SETTINGS
+from pathlib import Path
 
 from atomate2.jdftx.schemas.enums import (
     TaskType, 
@@ -22,6 +24,8 @@ from atomate2.jdftx.schemas.enums import (
 
 __author__ = "Cooper Tezak <cote3804@colorado.edu>"
 logger = logging.getLogger(__name__)
+
+# _DDEC6_AD_DIR_EXISTS = Path(SETTINGS.DDEC6_ATOMIC_DENSITIES_DIR).exists()
 
 class Convergence(BaseModel):
     """Schema for calculation convergence"""
@@ -265,6 +269,7 @@ class Calculation(BaseModel):
         jdftxoutput_file: Union[Path, str],
         jdftxinput_kwargs: Optional[dict] = None,
         jdftxoutput_kwargs: Optional[dict] = None,
+        # run_ddec6: Optional[bool] = (SETTINGS.JDFTX_RUN_DDEC6 and (_DDEC6_AD_DIR_EXISTS)),
         # task_name  # do we need task names? These are created by Custodian
     ) -> "Calculation":
         """

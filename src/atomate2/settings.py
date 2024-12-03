@@ -244,13 +244,22 @@ class Atomate2Settings(BaseSettings):
     )
 
     JDFTX_CMD: str = Field(
-        "srun jdftx", 
+        "jdftx", 
         description="Command to run jdftx."
     )
 
     JDFTX_PSEUDOS_DIR: Optional[str] = Field(
         None, 
         description="location of JDFTX pseudopotentials."
+    )
+    JDFTX_RUN_DDEC6: bool = Field(
+        default=False,
+        description="Whether to run the DDEC6 program when parsing JDFTx calculations."
+        "Requires the chargemol executable to be on the path.",
+    )
+    CHARGEMOL_CMD: str = Field(
+        default="chargemol",
+        description="Command to run the chargemol program. Replace wih full path if necessary."
     )
 
     @model_validator(mode="before")
