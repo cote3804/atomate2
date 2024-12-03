@@ -48,7 +48,7 @@ class Convergence(BaseModel):
 
     @classmethod
     def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile):
-        converged = jdftxoutput.is_converged
+        converged = jdftxoutput.converged
         jstrucs = jdftxoutput.jstrucs
         geom_converged = jstrucs.geom_converged
         geom_converged_reason = jstrucs.geom_converged_reason
