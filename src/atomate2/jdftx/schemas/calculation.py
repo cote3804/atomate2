@@ -179,7 +179,7 @@ class CalculationOutput(BaseModel):
         CalculationOutput
             The output document.
         """
-        optimized_structure: JOutStructure = jdftxoutput.structure
+        optimized_structure = jdftxoutput.structure
         if hasattr(optimized_structure, "forces"):
             forces = optimized_structure.forces.tolist()
         else:
@@ -200,11 +200,16 @@ class CalculationOutput(BaseModel):
         cbm = jdftxoutput.lumo
         vbm = jdftxoutput.homo
         if kwargs.get("store_trajectory", True) == True:
-            trajectory = jdftxoutput.trajectory
+            trajectory: Trajectory = jdftxoutput.trajectory
+            trajectory = trajectory.as_dict()
         else:
             trajectory = None
-
-
+        print("OPTIMIZED STRUCTURE: \n")
+        print(optimized_structure)
+        print("\n")
+        print("OPTIMIZED STRUCTURE TYPE")
+        print(type(optimized_structure))
+        print("\n")
         return cls(
             structure=optimized_structure, 
             forces=forces,
@@ -344,7 +349,7 @@ def _solvation_type(
 ) -> SolvationType:
     jdftxinput: JDFTXInfile = inputdoc.jdftxinfile
     fluid = jdftxinput.get("fluid", None)    
-    if fluid == None:
+    if fluid is None:
         return SolvationType("None")
     else:
         fluid_solvent = jdftxinput.get("pcm-variant")
