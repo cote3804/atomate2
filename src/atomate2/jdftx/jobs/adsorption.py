@@ -10,11 +10,10 @@ from typing import TYPE_CHECKING
 from jobflow import job, Response, Flow
 from pymatgen.core.surface import (
     SlabGenerator,
-    get_symmetrically_distinct_miller_indices,
     Slab
 )
 
-from pymatgen.core import Element, Molecule, Structure
+from pymatgen.core import Molecule, Structure
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
 
 
@@ -39,42 +38,37 @@ class SurfaceMinMaker(BaseJdftxMaker):
             calc_type="surface",
         )
     )
-
+@dataclass
 class MolMinMaker(BaseJdftxMaker):
     """Maker to create molecule relaxation job."""
-    name: str = "surface_ionic_min"
+    name: str = "molecule_ionic_min"
     input_set_generator: JdftxInputGenerator = field(
-        default_factory=IonicMinSetGenerator(
+        default_factory= lambda: IonicMinSetGenerator(
             coulomb_truncation = True,
             calc_type="molecule",
         )
     )
 
-def get_boxed_molecule(molecule: Molecule) -> Structure:
+def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
     """Get the molecule structure.
 
     Parameters
     ----------
-    molecule: Molecule
-        The molecule to be adsorbed.
+    molecules: list[Molecule]
+        The molecules to be adsorbed.
 
     Returns
     -------
-    Structure
-        The molecule structure.
+    list[Structure]
+        The molecule structures.
     """
-    return molecule.get_boxed_structure(10, 10, 10)
+    molecule_structures = defaultdict(list)
 
+    for i, molecule in enumerate(molecules):
+        boxed_molecule = molecule.get_boxed_structure(10, 10, 10)
+        molecule_structures[i] = boxed_molecule
 
-def _get_miller_indices(bulk_structure: Structure, max_index) -> list:
-    """Returns a list of Crystallographic orientations (hkl)"""
-    miller_indices = get_symmetrically_distinct_miller_indices(
-        bulk_structure, max_index=max_index
-    )
-    #can add miller indices not wanted
-    return list(miller_indices)
-
-
+    return  molecule_structures
 
 
 @job
@@ -88,9 +82,11 @@ def generate_slabs(
     center_slab: bool = True,
     lll_reduce: bool = True,
     reorient_lattice: bool = True,
-    super_cell: list = [2, 2, 1]
+    super_cell: list = [2, 2, 1],
 
 ) -> list:
+    
+    slab_configs = []
 
     slab_generator = SlabGenerator(
         bulk_structure,
@@ -115,21 +111,124 @@ def generate_slabs(
 
     logger.info(f"Generated {len(slabs)} slabs for {surface_idx} surface")
 
-    return slabs
+    for i, slab in enumerate(slabs):
+        oriented_bulk = slab.oriented_unit_cell
+        config = {
+            "configuration_number": i,
+            "oriented_unit_cell": oriented_bulk,
+            "structure": slab,
+        }
+        slab_configs.append(config)
+
+
+    return slab_configs
+
+@job
+def generate_ads_slabs(
+    slab: Slab,
+    adsorbates: list[Molecule],
+    min_displacement: float,
+    site_type: list[str],  # could be bridge, hollow
+    symm_reduce: float = 1e-2
+) -> list[Structure]:
+    """Generate structures with adsorbates placed on the slab surface.
+    
+    Parameters
+    ----------
+    slab : Slab
+        The optimized slab structure
+    adsorbates : list[Structure]
+        The adsorbates structures
+    min_displacement : float
+        Minimum distance between adsorbate and surface
+    site_type : list[str]
+        Type of adsorption site to consider
+        
+    Returns
+    -------
+    list[Structure]
+        List of structures with adsorbates placed at different sites
+    """
+    asf = AdsorbateSiteFinder(slab)
+    ads_configs = []
+
+    for adsorbate in adsorbates:
+        adsorbate_formula = adsorbate.composition.reduced_formula
+
+        sites = asf.find_adsorption_sites(
+            distance=min_displacement,
+            positions=site_type,
+            symm_reduce=symm_reduce
+            )
+        
+        for site_type in site_type:
+            for i, site in enumerate(sites[site_type]):
+                ads_struct = asf.add_adsorbate(adsorbate, site)
+
+                config = {
+                    "adsorbate": adsorbate_formula,
+                    "site_type": site_type,
+                    "site_index": i,
+                    "structure": ads_struct,
+                    "site_coords": site
+                }
+                ads_configs.append(config)
+        
+    return ads_configs
+
+@job
+def run_molecule_job(
+    molecule_structures: list[Structure],
+    min_maker: MolMinMaker,
+) -> Response:
+    
+    molecule_jobs = []
+    molecule_outputs = defaultdict(list)
+
+    for i, molecule in molecule_structures.items():
+        molecule_job = min_maker.make(structure=molecule)
+        job_name = molecule.composition.reduced_formula
+        molecule_job.append_name(f"_molecule_{job_name}")
+        molecule_jobs.append(molecule_job)
+
+        molecule_outputs["configuration_number"].append(i)
+        molecule_outputs["formula"].append(job_name)
+        molecule_outputs["relaxed_structures"].append(molecule_job.output.calc_outputs.structure)
+        molecule_outputs["energies"].append(molecule_job.output.calc_outputs.energy)
+        molecule_outputs["forces"].append(molecule_job.output.calc_outputs.forces)
+
+    molecule_flow = Flow(jobs=molecule_jobs, output=molecule_outputs, name="molecule_flow")
+    return Response(replace=molecule_flow)
+
+@job
+def make_dict(
+    molecules_outputs:dict
+) -> dict:
+    molecule_energies = {}
+    for i in range(len(molecules_outputs["configuration_number"])):
+        molecule_energies[molecules_outputs["formula"][i]] = molecules_outputs["energies"][i]
+    return molecule_energies
 
 @job
 def run_slabs_job(
     slab_structures: list[Structure],
     min_maker: SurfaceMinMaker,
+    bulk_structure: Structure,
+    bulk_energy: float,
+    calculate_surface_energy: bool = False,
 ) -> Response:
     
+    if calculate_surface_energy and (bulk_structure is None or bulk_energy is None):
+        raise ValueError(
+            "bulk_structure and bulk_energy must be provided if calculate_surface_energy is True"
+     )
 
     termination_jobs = []
     slab_outputs = defaultdict(list)
 
     for i, slab in enumerate(slab_structures):
         slab_job = min_maker.make(structure=slab)
-        job.append_name(f"slab_{i}")
+        slab_job.append_name(f"slab_{i}")
         termination_jobs.append(slab_job)
 
         slab_outputs["configuration_number"].append(i)
@@ -137,16 +236,152 @@ def run_slabs_job(
         slab_outputs["energies"].append(slab_job.output.output.energy)
         slab_outputs["forces"].append(slab_job.output.output.forces)
 
+        if calculate_surface_energy:
+            surface_energy = calculate_surface_energy(
+                slab_structure=slab,
+                bulk_structure=bulk_structure,
+                slab_energy=slab_job.output.output.energy,
+                bulk_energy=bulk_energy,
+                slab_area=slab.surface_area
+            )
+            slab_outputs["surface_energies"].append(surface_energy)
+
     slab_flow = Flow(jobs=termination_jobs, output=slab_outputs, name="slab_flow")
     return Response(replace=slab_flow)
 
 @job
-def pick_slab(slab_structures: list[Structure],
-            slab_calcs_outputs: dict) -> Structure:
-    """Pick the slab with the lowest surface energy."""
-    slab_energies = slab_calcs_outputs["energies"]
-    min_idx = slab_energies.index(min(slab_energies))
-    return slab_structures[min_idx]
+def run_ads_job(
+    ads_configs: list[dict],
+    relax_maker: SurfaceMinMaker
+) -> Response:
+    
+    ads_jobs = []
+    ads_outputs = defaultdict(list)
+
+    for i, config in enumerate(ads_configs):
+        ads_job = relax_maker.make(structure=config["structure"])
+        job_name = f"ads_{config['adsorbate']}_{config['site_type']}_{config['site_index']}"
+        ads_job.append_name(job_name)
+        ads_jobs.append(ads_job)
+
+        ads_outputs["configuration_number"].append(i)
+        ads_outputs["adsorbate"].append(config["adsorbate"])
+        ads_outputs["site_type"].append(config["site_type"])
+        ads_outputs["site_index"].append(config["site_index"])
+        ads_outputs["relaxed_structures"].append(ads_job.output.structure)
+        ads_outputs["energies"].append(ads_job.output.output.energy)
+        ads_outputs["forces"].append(ads_job.output.output.forces)
+
+    ads_flow = Flow(jobs=ads_jobs, output=ads_outputs, name="ads_flow")
+    return Response(replace=ads_flow)
+
 
 @job
-def generate_ads_slabs()
+def calculate_adsorption_energy(
+    ads_outputs: dict,
+    slab_energy: float,
+    molecule_energy: dict[str, float]
+) -> dict:
+    
+    results = defaultdict(list)
+
+    for i in range(len(ads_outputs["configuration_number"])):
+        adsorbate = ads_outputs["adsorbate"][i]
+        mol_energy = molecule_energy[adsorbate]
+        ads_energy = ads_outputs["energies"][i] - (slab_energy+mol_energy)
+
+        results["config_number"].append(i)
+        results["adsorbate"].append(adsorbate)
+        results["site_type"].append(ads_outputs["site_type"][i])
+        results["site_index"].append(ads_outputs["site_index"][i])
+        results["adsorption_energy"].append(ads_energy)
+        results["structure"].append(ads_outputs["relaxed_structures"][i])
+    
+    return results
+
+@job
+def pick_slab(slab_outputs: dict) ->dict:
+    """Pick the slab with the lowest energy."""
+
+    if "surface_energies" not in slab_outputs:
+        raise ValueError("Surface energies not found in slab outputs. Ensure surface energy calculation was enabled.")
+    if not slab_outputs["surface_energies"]:
+        raise ValueError("No surface energies calculated - slab output lists are empty.")
+    
+    min_energy_idx = min(
+        range(len(slab_outputs["surface_energies"])),
+        key=lambda i: slab_outputs["surface_energies"][i]
+    )
+
+    selected_slab = {
+        "configuration_number": slab_outputs["configuration_number"][min_energy_idx],
+        "relaxed_structure": slab_outputs["relaxed_structures"][min_energy_idx],
+        "energy": slab_outputs["energies"][min_energy_idx],
+        "forces": slab_outputs["forces"][min_energy_idx],
+        "surface_energy": slab_outputs["surface_energies"][min_energy_idx]
+
+    }
+
+    logger.info(
+        f"Selected slab configuration {selected_slab['configuration_index']} "
+        f"with surface energy {selected_slab['surface_energy']:.3f} eV/Å²"
+    )
+    
+    return selected_slab
+
+
+def calculate_surface_energy(
+        slab_structure: Slab,
+        bulk_structure: Structure,
+        slab_energy: float,
+        bulk_energy: float,
+        slab_area: float
+) -> float:
+    bulk_composition = bulk_structure.composition.get_el_amt_dict()
+    slab_composition = slab_structure.composition.get_el_amt_dict()
+    total_bulk_atoms = bulk_structure.composition.num_atoms
+
+    bulk_mole_fractions = {
+        element: count / total_bulk_atoms
+        for element, count in bulk_composition.items()
+    }
+
+    for ref_element in bulk_composition:
+        slab_bulk_ratio = (
+            slab_composition[ref_element] /
+            (bulk_mole_fractions[ref_element] * total_bulk_atoms)
+        )
+
+        for element in slab_composition:
+            excess_deficiency = {
+                element: round(
+                    (bulk_mole_fractions[element] * slab_composition[ref_element] /
+                     bulk_mole_fractions[ref_element]) - slab_composition[element],
+                     2
+                )
+            }
+
+        if all(value == int(value) for value in excess_deficiency.values()):
+            corrections = {
+                element: metal_bulk_energies[element] * factor
+                for element, factor in excess_deficiency.items()
+                if element != ref_element
+            }
+
+            surface_energy = (
+                slab_energy -
+                (slab_bulk_ratio * bulk_energy) +
+                sum(corrections.values())
+            ) / (2 * slab_area)
+
+            return surface_energy
+            
+
+
+
+
+        
+
+
+
+
