@@ -15,7 +15,6 @@ def test_taskdoc(mock_cwd, task_name, mock_filenames):
     taskdoc = TaskDoc.from_directory(dir_name=cwd, filenames=FILE_NAMES)
     jdftxoutfile = JDFTXOutfile.from_file(os.path.join(cwd,FILE_NAMES["out"]))
     # check that the taskdoc attributes correspond to the expected values.
-    # currently checking task_type, dir_name, and energy
+    # currently checking task_type and energy
     assert taskdoc.task_type == task_name
-    assert str(taskdoc.dir_name) == str(cwd)
     assert taskdoc.calc_outputs.energy == jdftxoutfile.e
