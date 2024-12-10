@@ -24,7 +24,9 @@ store = MongoStore(
 )
 store = JobStore(docs_store=store, additional_stores={"data": store})
 #source source /global/cfs/cdirs/m4025/sophie/jobflow/jdftx_env.sh
-cmd = "/global/cfs/cdirs/m4025/Software/Perlmutter/JDFTx/build-gpu/jdftx"
+cmd = "srun -n 1 --gpu-bind=single:1 /global/cfs/cdirs/m4025/Software/Perlmutter/JDFTx/build-gpu/jdftx_gpu"
+
+
 print(cmd)
 
 IrO2_structure = Structure.from_file("/pscratch/sd/s/soge8904/jobflow/IrO2/POSCAR_IrO2")
