@@ -7,6 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+<<<<<<< HEAD
 from jobflow import job, Response, Flow
 from pymatgen.core.surface import (
     SlabGenerator,
@@ -24,20 +25,30 @@ from atomate2.jdftx.sets.core import (
 )
 
 from atomate2.jdftx.sets.base import JdftxInputGenerator
+=======
+from atomate2.jdftx.jobs.base import BaseJdftxMaker
+from atomate2.jdftx.sets.core import IonicMinSetGenerator
+
+if TYPE_CHECKING:
+    from atomate2.jdftx.sets.core import JdftxInputGenerator
+>>>>>>> origin/main
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class SurfaceMinMaker(BaseJdftxMaker):
     """Maker to create surface relaxation job."""
+
     name: str = "surface_ionic_min"
     input_set_generator: JdftxInputGenerator = field(
-        default_factory= lambda: IonicMinSetGenerator(
-            coulomb_truncation = True,
-            auto_kpoint_density = 1000,
+        default_factory=lambda: IonicMinSetGenerator(
+            coulomb_truncation=True,
+            auto_kpoint_density=1000,
             calc_type="surface",
         )
     )
+<<<<<<< HEAD
 @dataclass
 class MolMinMaker(BaseJdftxMaker):
     """Maker to create molecule relaxation job."""
@@ -385,3 +396,18 @@ def calculate_surface_energy(
 
 
 
+=======
+
+
+@dataclass
+class MolMinMaker(BaseJdftxMaker):
+    """Maker to create molecule relaxation job."""
+
+    name: str = "surface_ionic_min"
+    input_set_generator: JdftxInputGenerator = field(
+        default_factory=IonicMinSetGenerator(
+            coulomb_truncation=True,
+            calc_type="molecule",
+        )
+    )
+>>>>>>> origin/main

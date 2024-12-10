@@ -4,19 +4,25 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, Self, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from custodian.jdftx.jobs import JDFTxJob  # Waiting on Sophie's PR
 from emmet.core.structure import StructureMetadata
+from monty.serialization import loadfn
 from pydantic import BaseModel, Field
+from pymatgen.core import Structure
 
 from atomate2.jdftx.schemas.calculation import (
     Calculation,
     CalculationInput,
     CalculationOutput,
-    RunStatistics,
+    RunStatistics
 )
-from atomate2.jdftx.schemas.enums import JDFTxStatus, TaskType
+from atomate2.jdftx.schemas.enums import (
+    CalcType, 
+    JDFTxStatus, 
+    TaskType,
+)
 from atomate2.jdftx.sets.base import FILE_NAMES
 from atomate2.utils.datetime import datetime_str
 
@@ -28,8 +34,6 @@ _T = TypeVar("_T", bound="TaskDoc")
 
 
 class CustodianDoc(BaseModel):
-    """Custodian data for JDFTx calculations."""
-
     corrections: Optional[list[Any]] = Field(
         None,
         title="Custodian Corrections",
@@ -59,6 +63,9 @@ class TaskDoc(StructureMetadata):
     calc_inputs: Optional[CalculationInput] = Field(
         {}, description="JDFTx calculation inputs"
     )
+    structure: Structure = Field(
+        None, description="Final output structure"
+    )
     run_stats: Optional[dict[str, RunStatistics]] = Field(
         None,
         description="Summary of runtime statistics for each calculation in this task",
@@ -79,8 +86,8 @@ class TaskDoc(StructureMetadata):
         cls: type[_T],
         dir_name: Union[Path, str],
         additional_fields: dict[str, Any] = None,
-        # **jdftx_calculation_kwargs, #TODO implement
-    ) -> Self:
+        **jdftx_calculation_kwargs,
+    ) -> _T:
         """
         Create a task document from a directory containing JDFTx files.
 
@@ -92,7 +99,7 @@ class TaskDoc(StructureMetadata):
             Whether to store additional json files in the calculation directory.
         additional_fields
             dictionary of additional fields to add to output document.
-        **jdftx_calculation_kwargs
+        **qchem_calculation_kwargs
             Additional parsing options that will be passed to the
             :obj:`.Calculation.from_qchem_files` function.
 
@@ -109,7 +116,6 @@ class TaskDoc(StructureMetadata):
             dir_name=dir_name,
             jdftxinput_file=FILE_NAMES["in"],
             jdftxoutput_file=FILE_NAMES["out"],
-            # **jdftx_calculation_kwargs, # still need to implement
         )
 
         doc = cls.from_structure(
@@ -120,7 +126,8 @@ class TaskDoc(StructureMetadata):
             task_type=calc_doc.task_type,
         )
 
-        return doc.model_copy(update=additional_fields)
+        doc = doc.model_copy(update=additional_fields)
+        return doc
 
 
 def get_uri(dir_name: Union[str, Path]) -> str:
@@ -145,6 +152,7 @@ def get_uri(dir_name: Union[str, Path]) -> str:
     hostname = socket.gethostname()
     try:
         hostname = socket.gethostbyaddr(hostname)[0]
-    except (socket.gaierror, socket.herror) as e:
-        raise Warning(f"Could not resolve hostname for {fullpath}") from e
+    except (socket.gaierror, socket.herror):
+        pass
     return f"{hostname}:{fullpath}"
+
