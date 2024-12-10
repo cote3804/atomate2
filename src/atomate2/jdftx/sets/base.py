@@ -170,12 +170,16 @@ class JdftxInputGenerator(InputGenerator):
         self.set_mu()
         self.set_pseudos()
         self.set_magnetic_moments(structure=structure)
+        #print(self.settings)
         self._apply_settings(self.settings)
 
         jdftx_structure = JDFTXStructure(structure)
         jdftxinputs = self.settings
         jdftxinput = JDFTXInfile.from_dict(jdftxinputs)
 
+        jdftxinputs = self.settings
+        jdftxinput = JDFTXInfile.from_dict(jdftxinputs)
+        #print("jdftxinput:", jdftxinput)
         return JdftxInputSet(jdftxinput=jdftxinput, jdftxstructure=jdftx_structure)
 
     def set_kgrid(self, structure: Structure) -> Kpoint:
@@ -267,9 +271,10 @@ class JdftxInputGenerator(InputGenerator):
         for atom in structure.species:
             nelec += _PSEUDO_CONFIG[self.pseudopotentials][str(atom)]
         nbands_add = int(nelec / 2) + 10
-        nbands_mult = int(nelec / 2) * _BEAST_CONFIG["bands_multiplier"]
+        nbands_mult = int((nelec/2)) * _BEAST_CONFIG["bands_multiplier"]
         self.settings["elec-n-bands"] = max(nbands_add, nbands_mult)
-
+        return
+             
     def set_pseudos(
         self,
     ) -> None:
