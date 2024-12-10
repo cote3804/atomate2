@@ -48,7 +48,7 @@ class Convergence(BaseModel):
 
     @classmethod
     def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile):
-        converged = jdftxoutput.is_converged
+        converged = jdftxoutput.converged
         jstrucs = jdftxoutput.jstrucs
         geom_converged = jstrucs.geom_converged
         geom_converged_reason = jstrucs.geom_converged_reason
@@ -300,6 +300,8 @@ class Calculation(BaseModel):
         converged = Convergence.from_jdftxoutput(jdftxoutput)
         run_stats = RunStatistics.from_jdftxoutput(jdftxoutput)
 
+        state=JDFTxStatus.SUCCESS if converged.converged else JDFTxStatus.FAILED
+
         calc_type = _calc_type(output_doc)
         task_type = _task_type(output_doc)
         solvation_type = _solvation_type(input_doc)
@@ -313,6 +315,7 @@ class Calculation(BaseModel):
             calc_type=calc_type,
             task_type=task_type,
             solvation_type=solvation_type,
+            state=state
         )
 
 
