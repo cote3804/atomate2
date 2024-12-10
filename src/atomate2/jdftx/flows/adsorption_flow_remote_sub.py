@@ -56,6 +56,8 @@ flow = AdsorptionMaker(
     min_slab_size=2.0
 )
 
+floww = flow.make(molecules=[molecule], bulk=IrO2_structure)
+
 resources = {
     "nodes": 1, 
     "ntasks": 1, 
@@ -71,4 +73,4 @@ resources = {
     # "queue_name": "regular",
 }
 
-print(submit_flow(flow, worker="perlmutter", project="IrO2_soge", resources=resources))
+print(submit_flow(floww, worker="perlmutter", project="IrO2_soge", resources=resources))

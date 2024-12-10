@@ -128,7 +128,7 @@ class BaseJdftxMaker(Maker):
 
         return Response(
             stop_children=stop_children,
-            stored_data={},
+            #stored_data={},
             output=task_doc,
         )
 
