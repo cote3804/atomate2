@@ -59,7 +59,7 @@ class AdsorptionMaker(BaseJdftxMaker):
 
         molecules_calc_outputs = mol_optimize_job.output
 
-        molecule_energies_dict = make_dict(molecule_outputs=molecules_calc_outputs)
+        molecule_energies_dict = make_dict(molecules_outputs=molecules_calc_outputs)
         jobs += [molecule_energies_dict]
 
 
@@ -73,6 +73,7 @@ class AdsorptionMaker(BaseJdftxMaker):
         
         jobs += [slab_from_unoptimized_bulk]
         oriented_bulk = slab_from_unoptimized_bulk.output[0]["oriented_unit_cell"]
+        print("oriented_bulk:", oriented_bulk)
 
         if self.bulk_relax_maker:
             bulk_optimize_job = self.bulk_relax_maker.make(
@@ -97,10 +98,11 @@ class AdsorptionMaker(BaseJdftxMaker):
         ) 
 
         jobs += [generate_slab_structures]
-        slab_structures = generate_slab_structures.output
+        slabs_output = generate_slab_structures.output
+
 
         run_slab_calcs = run_slabs_job(
-            slab_structures=slab_structures,
+            slabs_ouput=slabs_output,
             min_maker=self.slab_relax_maker,
             bulk_structure=optimized_bulk,
             bulk_energy=optimized_bulk_energy,

@@ -121,8 +121,7 @@ def generate_slabs(
             "structure": slab,
         }
         slab_configs.append(config)
-
-
+    print("slabs_config",slab_configs)
     return slab_configs
 
 @job
@@ -213,7 +212,7 @@ def make_dict(
 
 @job
 def run_slabs_job(
-    slab_structures: list[Structure],
+    slabs_output: list[dict],
     min_maker: SurfaceMinMaker,
     bulk_structure: Structure,
     bulk_energy: float,
@@ -227,6 +226,7 @@ def run_slabs_job(
 
     termination_jobs = []
     slab_outputs = defaultdict(list)
+    slab_structures = [slab["structure"] for slab in slabs_output]
 
     for i, slab in enumerate(slab_structures):
         slab_job = min_maker.make(structure=slab)
@@ -234,15 +234,15 @@ def run_slabs_job(
         termination_jobs.append(slab_job)
 
         slab_outputs["configuration_number"].append(i)
-        slab_outputs["relaxed_structures"].append(slab_job.output.structure)
-        slab_outputs["energies"].append(slab_job.output.output.energy)
-        slab_outputs["forces"].append(slab_job.output.output.forces)
+        slab_outputs["relaxed_structures"].append(slab_job.output.calc_outputs.structure)
+        slab_outputs["energies"].append(slab_job.output.calc_outputs.energy)
+        slab_outputs["forces"].append(slab_job.output.calc_outputs.forces)
 
         if calculate_surface_energy:
             surface_energy = calculate_surface_energy(
                 slab_structure=slab,
                 bulk_structure=bulk_structure,
-                slab_energy=slab_job.output.output.energy,
+                slab_energy=slab_job.output.calc_outputs.energy,
                 bulk_energy=bulk_energy,
                 slab_area=slab.surface_area
             )
@@ -270,9 +270,9 @@ def run_ads_job(
         ads_outputs["adsorbate"].append(config["adsorbate"])
         ads_outputs["site_type"].append(config["site_type"])
         ads_outputs["site_index"].append(config["site_index"])
-        ads_outputs["relaxed_structures"].append(ads_job.output.structure)
-        ads_outputs["energies"].append(ads_job.output.output.energy)
-        ads_outputs["forces"].append(ads_job.output.output.forces)
+        ads_outputs["relaxed_structures"].append(ads_job.output.calc_outputs.structure)
+        ads_outputs["energies"].append(ads_job.output.output.calc_outputs.energy)
+        ads_outputs["forces"].append(ads_job.output.output.calc_outputs.forces)
 
     ads_flow = Flow(jobs=ads_jobs, output=ads_outputs, name="ads_flow")
     return Response(replace=ads_flow)

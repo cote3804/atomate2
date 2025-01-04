@@ -117,6 +117,7 @@ def check_input(ref_path, input_settings: Sequence[str] = None):
 
     ref_input = JDFTXInfile.from_file(ref_path / "inputs" / "init.in")
     user_input = JDFTXInfile.from_file(zpath("init.in"))
+    print ("user_input:",user_input)
 
     keys_to_check = set(user_input) if input_settings is None else set(input_settings)
 

@@ -1,0 +1,40 @@
+latt-move-scale 0.0 0.0 0.0 
+coords-type Cartesian 
+lattice \
+    0.000000000000 0.000000000000 8.528849994534\
+    8.528849994534 0.000000000000 0.000000000000 \
+    0.000000000000 6.007289996150 0.000000000000 
+ion Ir 4.264424641093 4.264424641093 3.003645584499 1 
+ion Ir 0.000000083481 0.000000083481 6.007289745975 1 
+ion O 5.896306617340 5.896306617340 6.007289745975 1 
+ion O 1.631882059728 6.896967222458 3.003645584499 1 
+ion O 2.632542664846 2.632542664846 6.007289745975 1 
+ion O 6.896967222458 1.631882059728 3.003645584499 1 
+core-overlap-check none 
+ion-species GBRV_v1.5/$ID_pbe_v1.uspp 
+
+symmetries none 
+
+kpoint-folding 2 2 3 
+
+elec-ex-corr gga 
+van-der-waals D3 
+elec-cutoff 20.0 100.0 
+elec-smearing Fermi 0.001 
+elec-n-bands 37 
+spintype z-spin 
+initial-magnetic-moments Ir 5 5 O 0 0 0 0 
+converge-empty-states yes 
+
+coulomb-interaction Periodic 
+
+lattice-minimize \
+nIterations 0 
+electronic-minimize \
+nIterations 100 \
+    energyDiffThreshold 1e-07 
+
+dump-name jdftx.$VAR 
+band-projection-params yes no 
+dump End Dtot State BoundCharge Forces Ecomponents VfluidTot ElecDensity KEdensity EigStats BandEigs BandProjections DOS 
+
