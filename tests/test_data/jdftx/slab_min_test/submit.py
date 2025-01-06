@@ -1,32 +1,8 @@
-# from atomate2.jdftx.jobs.core import IonicMinMaker
-# from pymatgen.core import Structure
-# from atomate2.jdftx.sets.core import SinglePointSetGenerator
-# from jobflow import run_locally
-from jobflow import job, run_locally, JobStore
-from maggma.stores import MongoStore
-
-collection_name = "tests"
-store = MongoStore(
-    database="beast_fireworks_database",
-    collection_name=collection_name,
-    port=27017,
-    host="mongodb07.nersc.gov",
-    username="beast_fireworks_database_admin",
-    password="A3LvqspsU4XdQ^",
-    mongoclient_kwargs={"directConnection":True}
-)
-store = JobStore(docs_store=store, additional_stores={"data": store})
-
-# cmd = "srun -n 1 --gpu-bind=single:1 /global/cfs/cdirs/m4025/Software/Perlmutter/JDFTx/build-gpu/jdftx_gpu"
-
-# IrO2_structure = Structure.from_file("/pscratch/sd/s/soge8904/jobflow/IrO2/POSCAR_IrO2")
-
 from atomate2.jdftx.jobs.adsorption import SurfaceMinMaker
 from pymatgen.core import Structure
 from atomate2.jdftx.sets.core import SinglePointSetGenerator
 from jobflow import run_locally
 from pymatgen.core.surface import SlabGenerator
-from atomate2.jdftx.jobs.core import IonicMinMaker
 
 
 
@@ -61,20 +37,24 @@ lattice = Lattice(lattice_matrix)
 print(lattice)
 structure = Structure(lattice, species, coordinates, coords_are_cartesian=True)
 
-
 generator = SinglePointSetGenerator()
 generator.auto_kpoint_density = 100
 
-print(structure)
-
-maker = IonicMinMaker(
+maker = SurfaceMinMaker(
     input_set_generator=generator,
     run_jdftx_kwargs={"jdftx_cmd": cmd}
 )
+slab_generator = SlabGenerator(structure, miller_index=(1,0,0), min_slab_size=1.0, min_vacuum_size=20, center_slab=True, in_unit_planes=True, lll_reduce=True, reorient_lattice=True)
+slabs = slab_generator.get_slabs()
+slab = slabs[0]
+print(slab)
+super_slab = slab.make_supercell([2,2,1])
+print(super_slab)
 
-job_bulk = maker.make(structure)
+# from IPython import embed
+# embed() 
 
-response = run_locally(job_bulk, store=store, create_folders=True)
 
+slab_job = maker.make(super_slab)
 
-from IPython import embed; embed()
+response = run_locally(slab_job, create_folders=True)

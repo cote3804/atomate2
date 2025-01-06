@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from importlib.resources import files as get_mod_path
@@ -163,23 +164,19 @@ class JdftxInputGenerator(InputGenerator):
         JdftxInputSet
             A JDFTx input set.
         """
-        self.settings.update(self.user_settings)
+        self.settings.update(self.user_settings) 
         self.set_kgrid(structure=structure)
         self.set_coulomb_interaction(structure=structure)
         self.set_nbands(structure=structure)
         self.set_mu()
         self.set_pseudos()
         self.set_magnetic_moments(structure=structure)
-        #print(self.settings)
         self._apply_settings(self.settings)
 
         jdftx_structure = JDFTXStructure(structure)
         jdftxinputs = self.settings
         jdftxinput = JDFTXInfile.from_dict(jdftxinputs)
 
-        jdftxinputs = self.settings
-        jdftxinput = JDFTXInfile.from_dict(jdftxinputs)
-        #print("jdftxinput:", jdftxinput)
         return JdftxInputSet(jdftxinput=jdftxinput, jdftxstructure=jdftx_structure)
 
     def set_kgrid(self, structure: Structure) -> Kpoint:

@@ -33,6 +33,5 @@ def write_jdftx_input_set(
         Keyword arguments to pass to :obj:`.JdftxInputSet.write_input`.
     """
     cis = input_set_generator.get_input_set(structure)
-
     logger.info("Writing JDFTx input set.")
     cis.write_input(directory, **kwargs)

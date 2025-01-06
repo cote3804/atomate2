@@ -89,6 +89,10 @@ def generate_slabs(
 ) -> list:
     
     slab_configs = []
+    
+    for site in bulk_structure:
+        print("site", site)
+        print("site_frac", site.frac_coords)
 
     slab_generator = SlabGenerator(
         bulk_structure,
@@ -107,6 +111,12 @@ def generate_slabs(
         raise ValueError("No slabs could be generated with the given parameters")
     
     slabs = [slab for slab in slabs if not (slab.is_polar() and not slab.is_symmetric())]
+    print("bulk_structure", bulk_structure)
+    print("bulk_lattice", bulk_structure.lattice)
+    
+    # for slab in slabs:
+    #     print("slab_latt:", slab.lattice)
+    #     print("slab:", slab)
 
     for slab in slabs:
         slab.make_supercell(super_cell)
@@ -238,15 +248,15 @@ def run_slabs_job(
         slab_outputs["energies"].append(slab_job.output.calc_outputs.energy)
         slab_outputs["forces"].append(slab_job.output.calc_outputs.forces)
 
-        if calculate_surface_energy:
-            surface_energy = calculate_surface_energy(
-                slab_structure=slab,
-                bulk_structure=bulk_structure,
-                slab_energy=slab_job.output.calc_outputs.energy,
-                bulk_energy=bulk_energy,
-                slab_area=slab.surface_area
-            )
-            slab_outputs["surface_energies"].append(surface_energy)
+        # if calculate_surface_energy:
+        #     surface_energy = calculate_surface_energies(
+        #         slab_structure=slab,
+        #         bulk_structure=bulk_structure,
+        #         slab_energy=slab_job.output.calc_outputs.energy,
+        #         bulk_energy=bulk_energy,
+        #         slab_area=slab.surface_area
+        #     )
+        #     slab_outputs["surface_energies"].append(surface_energy)
 
     slab_flow = Flow(jobs=termination_jobs, output=slab_outputs, name="slab_flow")
     return Response(replace=slab_flow)
@@ -302,86 +312,167 @@ def calculate_adsorption_energy(
     return results
 
 @job
-def pick_slab(slab_outputs: dict) ->dict:
+def pick_slab(
+    slabs_outputs: dict,
+    surface_energies: list
+    ) ->dict:
     """Pick the slab with the lowest energy."""
 
-    if "surface_energies" not in slab_outputs:
-        raise ValueError("Surface energies not found in slab outputs. Ensure surface energy calculation was enabled.")
-    if not slab_outputs["surface_energies"]:
-        raise ValueError("No surface energies calculated - slab output lists are empty.")
+    if "surface_energies" is None:
+        raise ValueError("Surface energies not found. Ensure surface energy calculation was enabled.")
     
-    min_energy_idx = min(
-        range(len(slab_outputs["surface_energies"])),
-        key=lambda i: slab_outputs["surface_energies"][i]
-    )
+    # min_energy_idx = min(
+    #     range(len(slab_outputs["surface_energies"])),
+    #     key=lambda i: slab_outputs["surface_energies"][i]
+    # ) #this was for when surface energies were part of slabs_outputs
+
+    min_energy_idx = min(enumerate(surface_energies), key=lambda x: x[1])[0] #surface energies are list here
 
     selected_slab = {
         "configuration_number": slab_outputs["configuration_number"][min_energy_idx],
         "relaxed_structure": slab_outputs["relaxed_structures"][min_energy_idx],
         "energy": slab_outputs["energies"][min_energy_idx],
         "forces": slab_outputs["forces"][min_energy_idx],
-        "surface_energy": slab_outputs["surface_energies"][min_energy_idx]
+        "surface_energy": surface_energies[min_energy_idx]
 
     }
 
     logger.info(
         f"Selected slab configuration {selected_slab['configuration_index']} "
-        f"with surface energy {selected_slab['surface_energy']:.3f} eV/Å²"
+        f"with surface energy {selected_slab['surface_energy']:.3f} eV/Å²" #need to check units..
     )
     
     return selected_slab
 
 
-def calculate_surface_energy(
-        slab_structure: Slab,
-        bulk_structure: Structure,
-        slab_energy: float,
-        bulk_energy: float,
-        slab_area: float
-) -> float:
-    bulk_composition = bulk_structure.composition.get_el_amt_dict()
-    slab_composition = slab_structure.composition.get_el_amt_dict()
-    total_bulk_atoms = bulk_structure.composition.num_atoms
+# def calculate_surface_energies( #changed from calculate_surface_energy 
+#         slab_structure: Slab,
+#         bulk_structure: Structure,
+#         slab_energy: float,
+#         bulk_energy: float,
+#         slab_area: float
+# ) -> float:
+#     bulk_composition = bulk_structure.composition.get_el_amt_dict()
+#     slab_composition = slab_structure.composition.get_el_amt_dict()
+#     total_bulk_atoms = bulk_structure.composition.num_atoms
 
+#     bulk_mole_fractions = {
+#         element: count / total_bulk_atoms
+#         for element, count in bulk_composition.items()
+#     }
+
+#     for ref_element in bulk_composition:
+#         slab_bulk_ratio = (
+#             slab_composition[ref_element] /
+#             (bulk_mole_fractions[ref_element] * total_bulk_atoms)
+#         )
+
+#         for element in slab_composition:
+#             excess_deficiency = {
+#                 element: round(
+#                     (bulk_mole_fractions[element] * slab_composition[ref_element] /
+#                      bulk_mole_fractions[ref_element]) - slab_composition[element],
+#                      2
+#                 )
+#             }
+#         metal_bulk_energies = {
+#             "Ir": -76.494584,
+#         } #just have Ir for now, see comment below
+#         if all(value == int(value) for value in excess_deficiency.values()):
+#             corrections = {
+#                 element: metal_bulk_energies[element] * factor #need to decide how to get the metal bulk energies (energy per atom of bulk metal).
+#                 #Ideally, this would be a fully formed dict already, or should we calculate them each time witht he same params as the bulk? I think having a fully formed dict would be best.
+#                 for element, factor in excess_deficiency.items()
+#                 if element != ref_element
+#             }
+
+#             surface_energy = (
+#                 slab_energy -
+#                 (slab_bulk_ratio * bulk_energy) +
+#                 sum(corrections.values())
+#             ) / (2 * slab_area)
+
+#             return surface_energy
+            
+
+def calculate_surface_energies(
+    slab_structures: list[Slab],
+    bulk_structure: Structure,
+    slab_energies: list[float],
+    bulk_energy: float,
+) -> list[float]:
+    """
+    Calculate surface energies for multiple oxide slabs using oxygen as reference.
+    All slabs should contain the same elements as the bulk structure. 
+    
+    Args:
+        slab_structures: List of surface slab structures
+        bulk_structure: Bulk structure reference
+        slab_energies: List of DFT energies for each slab (eV)
+        bulk_energy: DFT energy of bulk (eV)
+        slab_areas: Surface areas of each slab (Å²)
+    
+    Returns:
+        list[float]: Surface energies (eV/Å²) for each slab
+    """
+    if len(slab_structures) != len(slab_energies):
+        raise ValueError("Number of slabs, energies must match")
+        
+    bulk_composition = bulk_structure.composition.get_el_amt_dict()
+    total_bulk_atoms = bulk_structure.composition.num_atoms
+    
+    # Calculate bulk mole fractions once since same for all slabs
     bulk_mole_fractions = {
         element: count / total_bulk_atoms
         for element, count in bulk_composition.items()
     }
+    
+    surface_energies = []
+    ref_element = "O"
+    metal_bulk_energies = {
+        "Ir": -76.494584,
+    } #just have Ir for now, see comment below
+    
+    for slab, slab_energy in zip(slab_structures, slab_energies):
+        slab_composition = slab.composition.get_el_amt_dict()
+        slab_area = slab.surface_area
 
-    for ref_element in bulk_composition:
+        # Calculate slab/bulk ratio using oxygen reference
         slab_bulk_ratio = (
             slab_composition[ref_element] /
             (bulk_mole_fractions[ref_element] * total_bulk_atoms)
         )
-
-        for element in slab_composition:
-            excess_deficiency = {
-                element: round(
-                    (bulk_mole_fractions[element] * slab_composition[ref_element] /
-                     bulk_mole_fractions[ref_element]) - slab_composition[element],
-                     2
-                )
-            }
-
-        if all(value == int(value) for value in excess_deficiency.values()):
-            corrections = {
-                element: metal_bulk_energies[element] * factor
-                for element, factor in excess_deficiency.items()
-                if element != ref_element
-            }
-
-            surface_energy = (
-                slab_energy -
-                (slab_bulk_ratio * bulk_energy) +
-                sum(corrections.values())
-            ) / (2 * slab_area)
-
-            return surface_energy
+        
+        # Calculate excess/deficiency for non-oxygen elements
+        excess_deficiency = {
+            element: round(
+                (bulk_mole_fractions[element] * slab_composition[ref_element] /
+                bulk_mole_fractions[ref_element]) - slab_composition[element],
+                2
+            )
+            for element in slab_composition
+            if element != ref_element
+        }
+        
+        if not all(value == int(value) for value in excess_deficiency.values()):
+            raise ValueError(f"Non-integer excess/deficiency factors found for slab {len(surface_energies)}")
             
+        corrections = {
+            element: metal_bulk_energies[element] * factor #need to decide how to get the metal bulk energies (energy per atom of bulk metal).
+#                 #Ideally, this would be a fully formed dict already, or should we calculate them each time witht he same params as the bulk? I think having a fully formed dict would be best.
 
-
-
-
+            for element, factor in excess_deficiency.items()
+        }
+        
+        surface_energy = (
+            slab_energy -
+            (slab_bulk_ratio * bulk_energy) +
+            sum(corrections.values())
+        ) / (2 * slab_area)
+        
+        surface_energies.append(surface_energy)
+    
+    return surface_energies
         
 
 

@@ -16,6 +16,7 @@ from atomate2.jdftx.jobs.adsorption import (
     generate_slabs,
     generate_ads_slabs,
     run_slabs_job,
+    calculate_surface_energies,
     pick_slab,
     run_ads_job,
     calculate_adsorption_energy,
@@ -73,7 +74,6 @@ class AdsorptionMaker(BaseJdftxMaker):
         
         jobs += [slab_from_unoptimized_bulk]
         oriented_bulk = slab_from_unoptimized_bulk.output[0]["oriented_unit_cell"]
-        print("oriented_bulk:", oriented_bulk)
 
         if self.bulk_relax_maker:
             bulk_optimize_job = self.bulk_relax_maker.make(
@@ -84,6 +84,7 @@ class AdsorptionMaker(BaseJdftxMaker):
 
 
             optimized_bulk = bulk_optimize_job.output.calc_outputs.structure
+            print("optimized_bulk",optimized_bulk)
             optimized_bulk_energy= bulk_optimize_job.output.calc_outputs.energy 
 
         else:   
@@ -102,49 +103,66 @@ class AdsorptionMaker(BaseJdftxMaker):
 
 
         run_slab_calcs = run_slabs_job(
-            slabs_ouput=slabs_output,
+            slabs_output=slabs_output,
             min_maker=self.slab_relax_maker,
             bulk_structure=optimized_bulk,
             bulk_energy=optimized_bulk_energy,
             calculate_surface_energy=True)
 
-        jobs += [run_slab_calcs]
-        slab_calcs_outputs = run_slab_calcs.output
-        slab_calcs_structures = slab_calcs_outputs["relaxed_structures"]
+        jobs += [run_slab_calcs] #need to do surface energy calc after this! this should return a dict output that can be added to.
+        slab_calcs_outputs = run_slab_calcs.output #dict
         slab_calcs_energies = slab_calcs_outputs["energies"]
-        slab_calcs_surface_energies = slab_calcs_outputs["surface_energies"]
+        slab_calcs_structures = slab_calcs_outputs["relaxed_structures"]
 
-        selected_slab = pick_slab(slab_outputs=slab_calcs_outputs)
-        jobs += [selected_slab]
+        
 
-        slab_structure = selected_slab.output["relaxed_structure"]
-        slab_energy = selected_slab.output["energy"]
+        # surface_energy_calcs = calculate_surface_energies(
+        #     slab_structures=slab_calcs_structures,
+        #     bulk_structure=optimized_bulk,
+        #     slab_energies=slab_calcs_energies,
+        #     bulk_energy=optimized_bulk_energy,
+        # )
+        
+        # jobs += [surface_energy_calcs]
+        # surface_energy_calcs_output = surface_energy_calcs.output #list
+        # #this will need to be combined with some other calculation to have everything together?
+        
 
-        ads_structures = generate_ads_slabs(
-            slab=slab_structure,
-            adsorbates=molecules,
-            min_displacement=self.min_displacement,
-            site_type=self.site_type)
 
-        jobs += [ads_structures]
+        # selected_slab = pick_slab(
+        #     slabs_outputs=slab_calcs_outputs,
+        #     surface_energies=surface_energy_calcs_output,
+        # )
+        # jobs += [selected_slab]
 
-        run_ads_calcs = run_ads_job(
-            ads_configs=ads_structures.output,
-            relax_maker=self.slab_relax_maker
-        )
+        # slab_structure = selected_slab.output["relaxed_structure"]
+        # slab_energy = selected_slab.output["energy"]
 
-        jobs += [run_ads_calcs]
+        # ads_structures = generate_ads_slabs(
+        #     slab=slab_structure,
+        #     adsorbates=molecules,
+        #     min_displacement=self.min_displacement,
+        #     site_type=self.site_type)
 
-        ads_energies = calculate_adsorption_energy(
-            ads_outputs=run_ads_calcs.output,
-            slab_energy=slab_energy,
-            molecule_energies=molecule_energies_dict.output
-        )
-        jobs += [ads_energies]
+        # jobs += [ads_structures]
+
+        # run_ads_calcs = run_ads_job(
+        #     ads_configs=ads_structures.output,
+        #     relax_maker=self.slab_relax_maker
+        # )
+
+        # jobs += [run_ads_calcs]
+
+        # ads_energies = calculate_adsorption_energy(
+        #     ads_outputs=run_ads_calcs.output,
+        #     slab_energy=slab_energy,
+        #     molecule_energies=molecule_energies_dict.output
+        # )
+        # jobs += [ads_energies]
 
         return Flow(
             jobs=jobs,
-            output=ads_energies.output
+    #        output=ads_energies.output
         )
 
 

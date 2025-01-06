@@ -39,7 +39,6 @@ def test_adsorption_flow(mock_jdftx, jdftx_test_dir):
     generator_mol = SinglePointSetGenerator()
 
     generator_bulk = SinglePointSetGenerator()
-    #generator_bulk.user_settings["kpoint-folding"] = {"n0": 2, "n1": 2, "n2": 3}
     generator_bulk.auto_kpoint_density = 100
 
     slab_relax_maker = SurfaceMinMaker(
@@ -59,7 +58,7 @@ def test_adsorption_flow(mock_jdftx, jdftx_test_dir):
         bulk_relax_maker=bulk_relax_maker,
         slab_relax_maker=slab_relax_maker,
         site_type=["ontop"],
-        min_slab_size=3.0)
+        min_slab_size=1.0)
 
     floww = flow.make(molecules=[molecule], bulk=IrO2_structure)
 
