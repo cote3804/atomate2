@@ -7,6 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+
 from jobflow import job, Response, Flow
 from pymatgen.core.surface import (
     SlabGenerator,
@@ -24,6 +25,12 @@ from atomate2.jdftx.sets.core import (
 )
 
 from atomate2.jdftx.sets.base import JdftxInputGenerator
+
+from atomate2.jdftx.jobs.base import BaseJdftxMaker
+from atomate2.jdftx.sets.core import IonicMinSetGenerator
+
+if TYPE_CHECKING:
+    from atomate2.jdftx.sets.core import JdftxInputGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -474,6 +481,8 @@ def calculate_surface_energies(
     
     return surface_energies
         
+
+
 
 
 

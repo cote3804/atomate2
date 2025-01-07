@@ -8,40 +8,47 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 from pymatgen.core.structure import Structure
-from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.jdftx.inputs import JDFTXInfile
-from pymatgen.io.jdftx.joutstructure import JOutStructure
 from pymatgen.io.jdftx.outputs import JDFTXOutfile
+from pymatgen.io.jdftx.joutstructure import JOutStructure
+from pymatgen.core.trajectory import Trajectory
 
-from atomate2.jdftx.schemas.enums import CalcType, SolvationType, TaskType
+from atomate2.jdftx.schemas.enums import (
+    TaskType, 
+    CalcType, 
+    JDFTxStatus, 
+    SolvationType
+)
 
 __author__ = "Cooper Tezak <cote3804@colorado.edu>"
 logger = logging.getLogger(__name__)
 
-
 class Convergence(BaseModel):
-    """Schema for calculation convergence."""
-
+    """Schema for calculation convergence"""
     converged: bool = Field(
-        default=True, description="Whether the JDFTx calculation converged"
+        True,
+        description="Whether the JDFTx calculation converged"
     )
     geom_converged: Optional[bool] = Field(
-        default=True, description="Whether the ionic/lattice optimization converged"
+        True,
+        description="Whether the ionic/lattice optimization converged"
     )
     elec_converged: Optional[bool] = Field(
-        default=True, description="Whether the last electronic optimization converged"
+        True,
+        description="Whether the last electronic optimization converged"
     )
     geom_converged_reason: Optional[str] = Field(
-        None, description="Reason ionic/lattice convergence was reached"
+        None,
+        description="Reason ionic/lattice convergence was reached"
     )
     elec_converged_reason: Optional[str] = Field(
-        None, description="Reason electronic convergence was reached"
+        None,
+        description="Reason electronic convergence was reached"
     )
 
     @classmethod
-    def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile) -> "Convergence":
-        """Initialize Convergence from JDFTxOutfile."""
-        converged = jdftxoutput.converged
+    def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile):
+        converged = jdftxoutput.is_converged
         jstrucs = jdftxoutput.jstrucs
         geom_converged = jstrucs.geom_converged
         geom_converged_reason = jstrucs.geom_converged_reason
@@ -52,24 +59,27 @@ class Convergence(BaseModel):
             geom_converged=geom_converged,
             geom_converged_reason=geom_converged_reason,
             elec_converged=elec_converged,
-            elec_converged_reason=elec_converged_reason,
+            elec_converged_reason=elec_converged_reason
         )
-
 
 class RunStatistics(BaseModel):
     """JDFTx run statistics."""
-
     total_time: Optional[float] = Field(
-        0, description="Total wall time for this calculation"
+        0, 
+        description="Total wall time for this calculation"
     )
 
     @classmethod
-    def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile) -> "RunStatistics":
-        """Initialize RunStatistics from JDFTXOutfile."""
-        t_s = jdftxoutput.t_s if hasattr(jdftxoutput, "t_s") else None
+    def from_jdftxoutput(cls, jdftxoutput:JDFTXOutfile):
+        """Initialize RunStatistics from JDFTXOutfile"""
+        if hasattr(jdftxoutput, "t_s"):
+            t_s = jdftxoutput.t_s
+        else:
+            t_s = None
 
-        return cls(total_time=t_s)
-
+        return cls(
+            total_time=t_s
+        )
 
 class CalculationInput(BaseModel):
     """Document defining JDFTx calculation inputs."""
@@ -77,7 +87,10 @@ class CalculationInput(BaseModel):
     structure: Structure = Field(
         None, description="input structure to JDFTx calculation"
     )
-    jdftxinfile: dict = Field(None, description="input tags in JDFTx in file")
+    jdftxinfile: dict = Field(
+        None, 
+        description="input tags in JDFTx in file"
+    )
 
     @classmethod
     def from_jdftxinput(cls, jdftxinput: JDFTXInfile) -> "CalculationInput":
@@ -111,39 +124,48 @@ class CalculationOutput(BaseModel):
         None,
         description="JDFTXOutfile dictionary from last JDFTx run",
     )
-    forces: Optional[list] = Field(None, description="forces from last ionic step")
-    energy: float = Field(None, description="Final energy")
-    energy_type: str = Field(
-        "F", description="Type of energy returned by JDFTx (e.g., F, G)"
+    forces: Optional[list] = Field(
+        None, 
+        description="forces from last ionic step"
     )
-    mu: float = Field(None, description="Fermi level of last electronic step")
+    energy: float = Field(
+        None, 
+        description="Final energy"
+    )
+    energy_type: str = Field(
+        "F",
+        description="Type of energy returned by JDFTx (e.g., F, G)"
+    )
+    mu: float = Field(
+        None, 
+        description="Fermi level of last electronic step"
+    )
     lowdin_charges: Optional[list] = Field(
-        None, description="Lowdin charges from last electronic optimizaiton"
+        None, 
+        description="Lowdin charges from last electronic optimizaiton"
     )
     total_charge: float = Field(
         None,
-        description=(
-            "Total system charge from last electronic step in number" "of electrons"
-        ),
+        description="Total system charge from last electronic step in number of electrons"
     )
     stress: Optional[list[list]] = Field(
-        None, description="Stress from last lattice optimization step"
+        None, 
+        description="Stress from last lattice optimization step"
     )
     cbm: Optional[float] = Field(
-        None,
-        description="Conduction band minimum / LUMO from last electronic optimization",
+        None, 
+        description="Conduction band minimum / LUMO from last electronic optimization"
     )
     vbm: Optional[float] = Field(
-        None, description="Valence band maximum /HOMO from last electonic optimization"
+        None,
+        description="Valence band maximum /HOMO from last electonic optimization"
     )
-    trajectory: Optional[Trajectory] = (
-        Field(None, description="Ionic trajectory from last JDFTx run"),
-    )
-
+    trajectory: Trajectory = Field(
+        None,
+        description="Ionic trajectory from last JDFTx run"
+    ),
     @classmethod
-    def from_jdftxoutput(
-        cls, jdftxoutput: JDFTXOutfile, **kwargs
-    ) -> "CalculationOutput":
+    def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile, **kwargs) -> "CalculationOutput":
         """
         Create a JDFTx output document from a JDFTXOutfile object.
 
@@ -157,30 +179,34 @@ class CalculationOutput(BaseModel):
         CalculationOutput
             The output document.
         """
-        optimized_structure: Structure = jdftxoutput.structure
-        forces = jdftxoutput.forces.tolist() if hasattr(jdftxoutput, "forces") else None
-        if hasattr(jdftxoutput, "stress"):
-            stress = None if jdftxoutput.stress is None else jdftxoutput.stress.tolist()
+        optimized_structure: JOutStructure = jdftxoutput.structure
+        if hasattr(optimized_structure, "forces"):
+            forces = optimized_structure.forces.tolist()
+        else:
+            forces = None
+        if hasattr(optimized_structure, "stress"):
+            if optimized_structure.stress == None:
+                stress = None
+            else:
+                stress = optimized_structure.stress.tolist()
         else:
             stress = None
         energy = jdftxoutput.e
         energy_type = jdftxoutput.eopt_type
         mu = jdftxoutput.mu
-        lowdin_charges = optimized_structure.site_properties.get("charges", None)
+        lowdin_charges = optimized_structure.charges
         # total charge in number of electrons (negative of oxidation state)
-        total_charge = (
-            jdftxoutput.total_electrons_uncharged - jdftxoutput.total_electrons
-        )
+        total_charge = jdftxoutput.total_electrons_uncharged - jdftxoutput.total_electrons
         cbm = jdftxoutput.lumo
         vbm = jdftxoutput.homo
-        structure = joutstruct_to_struct(joutstruct=optimized_structure)
-        if kwargs.get("store_trajectory", True):
-            trajectory: Trajectory = jdftxoutput.trajectory
-            trajectory = trajectory.as_dict()
+        if kwargs.get("store_trajectory", True) == True:
+            trajectory = jdftxoutput.trajectory
         else:
             trajectory = None
+
+
         return cls(
-            structure=structure,
+            structure=optimized_structure, 
             forces=forces,
             energy=energy,
             energy_type=energy_type,
@@ -194,25 +220,36 @@ class CalculationOutput(BaseModel):
             parameters=jdftxoutput.to_dict(),
         )
 
-
 class Calculation(BaseModel):
     """Full JDFTx calculation inputs and outputs."""
 
-    dir_name: str = Field(None, description="The directory for this JDFTx calculation")
+    dir_name: str = Field(
+        None, description="The directory for this JDFTx calculation"
+    )
     input: CalculationInput = Field(
         None, description="JDFTx input settings for the calculation"
     )
     output: CalculationOutput = Field(
         None, description="The JDFTx calculation output document"
     )
-    converged: Convergence = Field(None, description="JDFTx job conversion information")
-    run_stats: RunStatistics = Field(0, description="Statistics for the JDFTx run")
-    calc_type: CalcType = Field(None, description="Calculation type (e.g. PBE)")
+    converged: Convergence = Field(
+        None, description="JDFTx job conversion information"
+    )
+    run_stats: RunStatistics = Field(
+        0,
+        description="Statistics for the JDFTx run"
+    )
+    calc_type: CalcType = Field(
+        None,
+        description="Calculation type (e.g. PBE)"
+    )
     task_type: TaskType = Field(
-        None, description="Task type (e.g. Lattice Optimization)"
+        None,
+        description="Task type (e.g. Lattice Optimization)"
     )
     solvation_type: SolvationType = Field(
-        None, description="Type of solvation model used (e.g. LinearPCM CANDLE)"
+        None, 
+        description="Type of solvation model used (e.g. LinearPCM CANDLE)"
     )
 
     @classmethod
@@ -223,7 +260,7 @@ class Calculation(BaseModel):
         jdftxoutput_file: Union[Path, str],
         jdftxinput_kwargs: Optional[dict] = None,
         jdftxoutput_kwargs: Optional[dict] = None,
-        # **jdftx_calculation_kwargs, #TODO implement optional calcdoc kwargs
+        # task_name  # do we need task names? These are created by Custodian
     ) -> "Calculation":
         """
         Create a JDFTx calculation document from a directory and file paths.
@@ -257,15 +294,11 @@ class Calculation(BaseModel):
         jdftxoutput_kwargs = jdftxoutput_kwargs if jdftxoutput_kwargs else {}
         jdftxoutput = JDFTXOutfile.from_file(jdftxoutput_file)
 
-        input_doc = CalculationInput.from_jdftxinput(jdftxinput, **jdftxinput_kwargs)
-        output_doc = CalculationOutput.from_jdftxoutput(
-            jdftxoutput, **jdftxoutput_kwargs
-        )
+        input_doc = CalculationInput.from_jdftxinput(jdftxinput,  **jdftxinput_kwargs)
+        output_doc = CalculationOutput.from_jdftxoutput(jdftxoutput, **jdftxoutput_kwargs)
         logging.log(logging.DEBUG, f"{output_doc}")
         converged = Convergence.from_jdftxoutput(jdftxoutput)
         run_stats = RunStatistics.from_jdftxoutput(jdftxoutput)
-
-        state=JDFTxStatus.SUCCESS if converged.converged else JDFTxStatus.FAILED
 
         calc_type = _calc_type(output_doc)
         task_type = _task_type(output_doc)
@@ -280,7 +313,6 @@ class Calculation(BaseModel):
             calc_type=calc_type,
             task_type=task_type,
             solvation_type=solvation_type,
-            state=state
         )
 
 
@@ -289,48 +321,33 @@ def _task_type(
 ) -> TaskType:
     """Return TaskType for JDFTx calculation."""
     jdftxoutput: dict = outputdoc.parameters
-    if not jdftxoutput.get("geom_opt"):
+    if jdftxoutput.get("geom_opt") == False:
         return TaskType("Single Point")
-    if jdftxoutput.get("geom_opt_type") == "lattice":
-        return TaskType("Lattice Optimization")
-    if jdftxoutput.get("geom_opt_type") == "ionic":
-        return TaskType("Ionic Optimization")
-    # TODO implement MD and frequency task types. Waiting on output parsers
+    else:
+        if jdftxoutput.get("geom_opt_type") == "lattice":
+            return TaskType("Lattice Optimization")
+        elif jdftxoutput.get("geom_opt_type") == "ionic":
+            return TaskType("Ionic Optimization")
+    #TODO implement MD and frequency task types. Waiting on output parsers
 
     return TaskType("Unknown")
 
-
 def _calc_type(
-    outputdoc: CalculationOutput,
+        outputdoc: CalculationOutput ,
 ) -> CalcType:
     jdftxoutput = outputdoc.parameters
     xc = jdftxoutput.get("xc_func", None)
     return CalcType(xc)
 
-
-def _solvation_type(inputdoc: CalculationInput) -> SolvationType:
+def _solvation_type(
+        inputdoc: CalculationInput
+) -> SolvationType:
     jdftxinput: JDFTXInfile = inputdoc.jdftxinfile
-    fluid = jdftxinput.get("fluid", None)
-    if fluid is None:
+    fluid = jdftxinput.get("fluid", None)    
+    if fluid == None:
         return SolvationType("None")
-    fluid_solvent = jdftxinput.get("pcm-variant")
-    fluid_type = fluid.get("type")
-    solvation_type = f"{fluid_type} {fluid_solvent}"
-    return SolvationType(solvation_type)
-
-
-def joutstruct_to_struct(joutstruct: JOutStructure) -> Structure:
-    """Convert JOutStructre to Structure."""
-    lattice = joutstruct.lattice
-    cart_coords = joutstruct.cart_coords
-    species = joutstruct.species
-    struct = Structure(
-        lattice=lattice,
-        coords=cart_coords,
-        species=species,
-        coords_are_cartesian=True,
-    )
-    for prop, values in joutstruct.site_properties.items():
-        for isite, site in enumerate(struct):
-            site.properties[prop] = values[isite]
-    return struct
+    else:
+        fluid_solvent = jdftxinput.get("pcm-variant")
+        fluid_type = fluid.get("type")
+        solvation_type = f"{fluid_type} {fluid_solvent}"
+        return SolvationType(solvation_type)
