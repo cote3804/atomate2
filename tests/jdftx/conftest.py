@@ -98,11 +98,11 @@ def fake_run_jdftx(
         results = check_input(ref_path, input_settings)
         for key, (user_val, ref_val) in results.items():
             if isinstance(user_val, dict) and isinstance(ref_val, dict):
-                compare_dict(user_val, ref_val, key)
-            else:
-                assert (
-                    user_val == ref_val
-                ), f"Mismatch for {key}: user_val={user_val}, ref_val={ref_val}"
+                compare_values(user_val, ref_val, key)
+            # else:
+            #     assert (
+            #         user_val == ref_val
+            #     ), f"Mismatch for {key}: user_val={user_val}, ref_val={ref_val}"
 
     logger.info("Verified inputs successfully")
 
@@ -129,6 +129,22 @@ def check_input(ref_path, input_settings: Sequence[str] = None):
 
     return results
 
+
+def compare_values(user_val, ref_val, key, rel_tol=1e-9):
+    if isinstance(user_val, (list, tuple)) and isinstance(ref_val, (list, tuple)):
+        assert len(user_val) == len(ref_val), f"Length mismatch for {key}"
+        for i, (uv, rv) in enumerate(zip(user_val, ref_val)):
+            compare_values(uv, rv, f"{key}[{i}]", rel_tol)
+    elif isinstance(user_val, dict) and isinstance(ref_val, dict):
+        compare_dict(user_val, ref_val, key, rel_tol)
+    elif isinstance(user_val, (int, float)) and isinstance(ref_val, (int, float)):
+        assert math.isclose(user_val, ref_val, rel_tol=rel_tol), (
+            f"Mismatch for {key}: user_val={user_val}, ref_val={ref_val}"
+        )
+    else:
+        assert user_val == ref_val, (
+            f"Mismatch for {key}: user_val={user_val}, ref_val={ref_val}"
+        )    
 
 def compare_dict(user_val, ref_val, key, rel_tol=1e-9):
     for sub_key, user_sub_val in user_val.items():

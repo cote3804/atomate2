@@ -41,7 +41,7 @@ elec-cutoff 20.0 100.0
 elec-smearing Fermi 0.001 
 elec-n-bands 129 
 spintype z-spin 
-initial-magnetic-moments Ir 5 5 5 5 5 5 5 5 O 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+initial-magnetic-moments Ir 0.001 0.001 0.001 0.001 0.0 0.0 0.0 0.0 O 0.0 0.0 0.0 0.0 -0.001 -0.001 -0.001 -0.001 0.0 0.0 0.0 0.0 -0.001 -0.001 -0.001 -0.001 
 converge-empty-states yes 
 
 coulomb-interaction Periodic 
