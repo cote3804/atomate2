@@ -265,8 +265,6 @@ class Calculation(BaseModel):
         converged = Convergence.from_jdftxoutput(jdftxoutput)
         run_stats = RunStatistics.from_jdftxoutput(jdftxoutput)
 
-        state=JDFTxStatus.SUCCESS if converged.converged else JDFTxStatus.FAILED
-
         calc_type = _calc_type(output_doc)
         task_type = _task_type(output_doc)
         solvation_type = _solvation_type(input_doc)
@@ -280,7 +278,6 @@ class Calculation(BaseModel):
             calc_type=calc_type,
             task_type=task_type,
             solvation_type=solvation_type,
-            state=state
         )
 
 

@@ -336,10 +336,10 @@ def pick_slab(
     min_energy_idx = min(enumerate(surface_energies), key=lambda x: x[1])[0] #surface energies are list here
 
     selected_slab = {
-        "configuration_number": slab_outputs["configuration_number"][min_energy_idx],
-        "relaxed_structure": slab_outputs["relaxed_structures"][min_energy_idx],
-        "energy": slab_outputs["energies"][min_energy_idx],
-        "forces": slab_outputs["forces"][min_energy_idx],
+        "configuration_number": slabs_outputs["configuration_number"][min_energy_idx],
+        "relaxed_structure": slabs_outputs["relaxed_structures"][min_energy_idx],
+        "energy": slabs_outputs["energies"][min_energy_idx],
+        "forces": slabs_outputs["forces"][min_energy_idx],
         "surface_energy": surface_energies[min_energy_idx]
 
     }
