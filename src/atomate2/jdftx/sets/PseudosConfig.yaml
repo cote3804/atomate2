@@ -134,6 +134,8 @@ GBRV_v1.5:
   H: 1
 
 SG15:
+  suffixes:
+    - _ONCV_PBE.upf
   Cd: 12
   Be: 4
   Br: 7
