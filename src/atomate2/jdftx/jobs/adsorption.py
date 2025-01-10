@@ -96,10 +96,6 @@ def generate_slabs(
 ) -> list:
     
     slab_configs = []
-    
-    for site in bulk_structure:
-        print("site", site)
-        print("site_frac", site.frac_coords)
 
     slab_generator = SlabGenerator(
         bulk_structure,
@@ -118,12 +114,6 @@ def generate_slabs(
         raise ValueError("No slabs could be generated with the given parameters")
     
     slabs = [slab for slab in slabs if not (slab.is_polar() and not slab.is_symmetric())]
-    print("bulk_structure", bulk_structure)
-    print("bulk_lattice", bulk_structure.lattice)
-    
-    # for slab in slabs:
-    #     print("slab_latt:", slab.lattice)
-    #     print("slab:", slab)
 
     for slab in slabs:
         slab.make_supercell(super_cell)
@@ -138,7 +128,6 @@ def generate_slabs(
             "structure": slab,
         }
         slab_configs.append(config)
-    print("slabs_config",slab_configs)
     return slab_configs
 
 @job
@@ -250,10 +239,13 @@ def run_slabs_job(
         slab_job.append_name(f"slab_{i}")
         termination_jobs.append(slab_job)
 
+
         slab_outputs["configuration_number"].append(i)
         slab_outputs["relaxed_structures"].append(slab_job.output.calc_outputs.structure)
         slab_outputs["energies"].append(slab_job.output.calc_outputs.energy)
         slab_outputs["forces"].append(slab_job.output.calc_outputs.forces)
+
+        
 
         # if calculate_surface_energy:
         #     surface_energy = calculate_surface_energies(
@@ -267,6 +259,10 @@ def run_slabs_job(
 
     slab_flow = Flow(jobs=termination_jobs, output=slab_outputs, name="slab_flow")
     return Response(replace=slab_flow)
+
+def add_1(slab_output_test):
+    add_1_output = slab_output_test + 1
+    return add_1_output
 
 @job
 def run_ads_job(
@@ -402,10 +398,10 @@ def pick_slab(
 #             return surface_energy
             
 
+@job
 def calculate_surface_energies(
-    slab_structures: list[Slab],
+    slabs_outputs: list[Slab],
     bulk_structure: Structure,
-    slab_energies: list[float],
     bulk_energy: float,
 ) -> list[float]:
     """
@@ -422,6 +418,9 @@ def calculate_surface_energies(
     Returns:
         list[float]: Surface energies (eV/Å²) for each slab
     """
+    slab_structures = slabs_outputs["relaxed_structures"]
+    slab_energies = slabs_outputs["energies"]
+    
     if len(slab_structures) != len(slab_energies):
         raise ValueError("Number of slabs, energies must match")
         

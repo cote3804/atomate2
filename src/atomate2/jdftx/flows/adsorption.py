@@ -116,14 +116,13 @@ class AdsorptionMaker(BaseJdftxMaker):
 
         
 
-        # surface_energy_calcs = calculate_surface_energies(
-        #     slab_structures=slab_calcs_structures,
-        #     bulk_structure=optimized_bulk,
-        #     slab_energies=slab_calcs_energies,
-        #     bulk_energy=optimized_bulk_energy,
-        # )
+        surface_energy_calcs = calculate_surface_energies(
+            slabs_outputs=slab_calcs_outputs,
+            bulk_structure=optimized_bulk,
+            bulk_energy=optimized_bulk_energy,
+        )
         
-        # jobs += [surface_energy_calcs]
+        jobs += [surface_energy_calcs]
         # surface_energy_calcs_output = surface_energy_calcs.output #list
         # #this will need to be combined with some other calculation to have everything together?
         
