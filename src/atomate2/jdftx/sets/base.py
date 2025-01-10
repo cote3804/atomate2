@@ -135,7 +135,13 @@ class JdftxInputGenerator(InputGenerator):
                 "types: {calc_type_options}."
             )
         self.settings = self.default_settings.copy()
-        self.settings.update(self.user_settings)
+        # users can pass a jdftx tag as a key with value None
+        # to remove the tag from the settings
+        for k, v in self.user_settings.items():
+            if v is None and k in self.settings:
+                self.settings.pop(k)
+            else:
+                self.settings[k] = v
         # set default coords-type to Cartesian
         if "coords-type" not in self.settings:
             self.settings["coords-type"] = "Cartesian"
