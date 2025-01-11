@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from importlib.resources import files as get_mod_path
@@ -138,11 +137,16 @@ class JdftxInputGenerator(InputGenerator):
         self.settings = self.default_settings.copy()
         # users can pass a jdftx tag as a key with value None
         # to remove the tag from the settings
+        user_keys_to_remove = []
         for k, v in self.user_settings.items():
             if v is None and k in self.settings:
                 self.settings.pop(k)
+                user_keys_to_remove.append(k)
             else:
                 self.settings[k] = v
+        # remove None keys from user_settings so that they
+        # aren't use to update self.settings later.
+        [self.user_settings.pop(k) for k in user_keys_to_remove]
         # set default coords-type to Cartesian
         if "coords-type" not in self.settings:
             self.settings["coords-type"] = "Cartesian"
@@ -170,7 +174,7 @@ class JdftxInputGenerator(InputGenerator):
         JdftxInputSet
             A JDFTx input set.
         """
-        self.settings.update(self.user_settings) 
+        self.settings.update(self.user_settings)
         self.set_kgrid(structure=structure)
         self.set_coulomb_interaction(structure=structure)
         self.set_nbands(structure=structure)
@@ -274,10 +278,9 @@ class JdftxInputGenerator(InputGenerator):
         for atom in structure.species:
             nelec += _PSEUDO_CONFIG[self.pseudopotentials][str(atom)]
         nbands_add = int(nelec / 2) + 10
-        nbands_mult = int((nelec/2)) * _BEAST_CONFIG["bands_multiplier"]
+        nbands_mult = int(nelec / 2) * _BEAST_CONFIG["bands_multiplier"]
         self.settings["elec-n-bands"] = max(nbands_add, nbands_mult)
-        return
-             
+
     def set_pseudos(
         self,
     ) -> None:
