@@ -203,7 +203,7 @@ def run_molecule_job(
     molecule_jobs = []
     molecule_outputs = defaultdict(list)
 
-    for i, molecule in molecule_structures.items():
+    for i, molecule in enumerate(molecule_structures):
         molecule_job = min_maker.make(structure=molecule)
         job_name = molecule.composition.reduced_formula
         molecule_job.append_name(f"_molecule_{job_name}")
