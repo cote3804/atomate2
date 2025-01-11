@@ -1,4 +1,4 @@
-"""Flows to generate EOS fits using machine learned interatomic potentials."""
+"""Flows to generate EOS fits using CHGNet, M3GNet, or MACE."""
 
 from __future__ import annotations
 
@@ -62,7 +62,6 @@ class ForceFieldEosMaker(CommonEosMaker):
         cls,
         force_field_name: str | MLFF,
         relax_initial_structure: bool = True,
-        **kwargs,
     ) -> Self:
         """
         Create an EOS flow from a forcefield name.
@@ -73,9 +72,6 @@ class ForceFieldEosMaker(CommonEosMaker):
             The name of the force field.
         relax_initial_structure: bool = True
             Whether to relax the initial structure before performing an EOS fit.
-        **kwargs
-            Additional kwargs to pass to ElasticMaker
-
 
         Returns
         -------
@@ -93,7 +89,6 @@ class ForceFieldEosMaker(CommonEosMaker):
                 force_field_name=force_field_name, relax_cell=False
             ),
             static_maker=None,
-            **kwargs,
         )
 
 

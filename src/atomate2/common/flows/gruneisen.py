@@ -40,7 +40,7 @@ class BaseGruneisenMaker(Maker, ABC):
     generated for all the three structures (ground state, expanded and shrunk volume)
     and accurate forces are computed for these structures. With the help of phonopy,
     these forces are then converted into a dynamical matrix. This dynamical matrix of
-    three structures is then used as an input for the phonopy Grueneisen API
+    three structures is then used as an input for the phonopy Grueneisen api
     to compute Grueneisen parameters.
 
 

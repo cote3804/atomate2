@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from importlib.resources import files as get_mod_path
@@ -169,7 +170,7 @@ class JdftxInputGenerator(InputGenerator):
         JdftxInputSet
             A JDFTx input set.
         """
-        self.settings.update(self.user_settings)
+        self.settings.update(self.user_settings) 
         self.set_kgrid(structure=structure)
         self.set_coulomb_interaction(structure=structure)
         self.set_nbands(structure=structure)
@@ -273,9 +274,10 @@ class JdftxInputGenerator(InputGenerator):
         for atom in structure.species:
             nelec += _PSEUDO_CONFIG[self.pseudopotentials][str(atom)]
         nbands_add = int(nelec / 2) + 10
-        nbands_mult = int(nelec / 2) * _BEAST_CONFIG["bands_multiplier"]
+        nbands_mult = int((nelec/2)) * _BEAST_CONFIG["bands_multiplier"]
         self.settings["elec-n-bands"] = max(nbands_add, nbands_mult)
-
+        return
+             
     def set_pseudos(
         self,
     ) -> None:
