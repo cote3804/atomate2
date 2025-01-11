@@ -206,12 +206,13 @@ class JdftxInputGenerator(InputGenerator):
         if "kpoint-folding" in self.user_settings:
             return
         # calculate k-grid with k-point density
-        kpoints = Kpoints.automatic_density(
-            structure=structure, kppa=self.auto_kpoint_density
-        )
-        kpoints = kpoints.kpts[0]
-        if self.calc_type == "surface":
-            kpoints = (kpoints[0], kpoints[1], 1)
+        if self.calc_type != "molecule":
+            kpoints = Kpoints.automatic_density(
+                structure=structure, kppa=self.auto_kpoint_density
+            )
+            kpoints = kpoints.kpts[0]
+            if self.calc_type == "surface":
+                kpoints = (kpoints[0], kpoints[1], 1)
         elif self.calc_type == "molecule":
             kpoints = (1, 1, 1)
         kpoint_update = {
