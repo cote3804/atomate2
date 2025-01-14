@@ -186,6 +186,7 @@ def generate_ads_slabs(
 @job
 def run_molecule_job(
     molecule_structures: list[Structure],
+    molecules: list[Molecule],
     min_maker: MolMinMaker,
 ) -> Response:
     
@@ -194,7 +195,7 @@ def run_molecule_job(
 
     for i, molecule in enumerate(molecule_structures): #changed from in molecule_structures.item()
         molecule_job = min_maker.make(structure=molecule)
-        job_name = molecule.composition.reduced_formula
+        job_name = molecules[i].composition.reduced_formula
         molecule_job.append_name(f"_molecule_{job_name}")
         molecule_jobs.append(molecule_job)
 

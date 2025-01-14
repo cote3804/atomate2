@@ -54,6 +54,7 @@ class AdsorptionMaker(BaseJdftxMaker):
         if self.mol_relax_maker:
             mol_optimize_job = run_molecule_job(
                 molecule_structures,
+                molecules,
                 min_maker=self.mol_relax_maker
             )
             jobs += [mol_optimize_job]
