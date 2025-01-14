@@ -12,11 +12,11 @@ from atomate2.jdftx.jobs.base import BaseJdftxMaker
 from atomate2.jdftx.jobs.adsorption import (
     get_boxed_molecules,
     run_molecule_job,
-    make_dict,
+    generate_dict,
     generate_slabs,
     generate_ads_slabs,
     run_slabs_job,
-    calculate_surface_energies,
+    generate_surface_energies,
     pick_slab,
     run_ads_job,
     calculate_adsorption_energy,
@@ -61,7 +61,7 @@ class AdsorptionMaker(BaseJdftxMaker):
 
         molecules_calc_outputs = mol_optimize_job.output
 
-        molecule_energies_dict = make_dict(molecules_outputs=molecules_calc_outputs)
+        molecule_energies_dict = generate_dict(molecules_outputs=molecules_calc_outputs)
         jobs += [molecule_energies_dict]
 
 
@@ -117,7 +117,7 @@ class AdsorptionMaker(BaseJdftxMaker):
 
         
 
-        surface_energy_calcs = calculate_surface_energies(
+        surface_energy_calcs = generate_surface_energies(
             slabs_outputs=slab_calcs_outputs,
             bulk_structure=optimized_bulk,
             bulk_energy=optimized_bulk_energy,

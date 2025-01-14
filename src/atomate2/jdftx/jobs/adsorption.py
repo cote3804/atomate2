@@ -209,7 +209,7 @@ def run_molecule_job(
     return Response(replace=molecule_flow)
 
 @job
-def make_dict(
+def generate_dict(
     molecules_outputs:dict
 ) -> dict:
     molecule_energies = {}
@@ -260,10 +260,6 @@ def run_slabs_job(
 
     slab_flow = Flow(jobs=termination_jobs, output=slab_outputs, name="slab_flow")
     return Response(replace=slab_flow)
-
-def add_1(slab_output_test):
-    add_1_output = slab_output_test + 1
-    return add_1_output
 
 @job
 def run_ads_job(
@@ -400,7 +396,7 @@ def pick_slab(
             
 
 @job
-def calculate_surface_energies(
+def generate_surface_energies(
     slabs_outputs: list[Slab],
     bulk_structure: Structure,
     bulk_energy: float,
