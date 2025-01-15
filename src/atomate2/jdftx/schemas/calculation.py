@@ -157,19 +157,29 @@ class CalculationOutput(BaseModel):
     trajectory: Optional[Trajectory] = (
         Field(None, description="Ionic trajectory from last JDFTx run"),
     )
-    eigenvals: Optional[NDArray] = (
+    eigenvals: Optional[list] = (
         Field(
             None,
             description="Kohn-Sham eigenvalues for each band-state in "
-            "array of shape (state, band)"
+            "list form of length nStates x nBands following standard "
+            "C-ordering."
             )
     )
-    bandProjections: Optional[NDArray] = (
+    bandProjections: Optional[list] = (
         Field(
             None,
             description="Complex projections of atomic orbitals onto band-states in "
-            "array of shape (state, band, orbital)"
+            "list form of length nStates x nBands x nOrbitals following"
+            "standard C-ordering."
             )
+    )
+    bandProjections_shape: Optional[tuple] = (
+        Field(
+            None,
+            description="Intended shape of bandProjections "
+            "(nStates, nBands, nOrbitals). bandProjections_shape[:2] can"
+            "be used for reshaping eigenvals instead."
+        )
     )
     orb_label_list: Optional[tuple[str, ...]] = (
         Field(
@@ -218,6 +228,15 @@ class CalculationOutput(BaseModel):
             trajectory = trajectory.as_dict()
         else:
             trajectory = None
+
+        eigenvals = None
+        bandProjections_shape = None
+        bandProjections = None
+        if not jdftxoutputs.eigenvals is None:
+            eigenvals = dftxoutputs.eigenvals.flatten().tolist(),
+        if not jdftxoutputs.bandProjections is None:
+            bandProjections_shape = jdftxoutputs.bandProjections.shape
+            bandProjections = jdftxoutputs.bandProjections.flatten().tolist()
         
         return cls(
             structure=structure,
@@ -232,8 +251,9 @@ class CalculationOutput(BaseModel):
             vbm=vbm,
             trajectory=trajectory,
             parameters=jdftxoutfile.to_dict(),
-            eigenvals=jdftxoutputs.eigenvals,
-            bandProjections=jdftxoutputs.bandProjections,
+            eigenvals=eigenvals,
+            bandProjections_shape=bandProjections_shape,
+            bandProjections=bandProjections,
             orb_label_list=jdftxoutputs.orb_label_list,
         )
 
