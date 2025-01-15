@@ -361,8 +361,8 @@ class Calculation(BaseModel):
                 kwarg_ref[key] = {}
 
         jdftxinput = JDFTXInfile.from_file(jdftxinfile_path, **kwarg_ref["input"])
-        if not "outfile_name" in jdftxoutput_kwargs:
-            jdftxoutput_kwargs["outfile_name"] = jdftxoutfile_rel_path
+        if not "outfile_name" in kwarg_ref["output"]:
+            kwarg_ref["output"]["outfile_name"] = jdftxoutfile_rel_path
         jdftxoutputs = JDFTXOutputs.from_calc_dir(
             dir_name,
             **kwarg_ref["output"],
