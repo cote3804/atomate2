@@ -53,7 +53,7 @@ class TaskDoc(StructureMetadata):
         default_factory=datetime_str,
         description="Timestamp for this task document was last updated",
     )
-    comnpleted_at: Optional[str] = Field(
+    completed_at: Optional[str] = Field(
         None, description="Timestamp for when this task was completed"
     )
     calc_inputs: Optional[CalculationInput] = Field(
@@ -79,7 +79,7 @@ class TaskDoc(StructureMetadata):
         cls: type[_T],
         dir_name: Union[Path, str],
         additional_fields: dict[str, Any] = None,
-        # **jdftx_calculation_kwargs, #TODO implement
+        **jdftx_calculation_kwargs, #TODO implement
     ) -> Self:
         """
         Create a task document from a directory containing JDFTx files.
@@ -109,7 +109,7 @@ class TaskDoc(StructureMetadata):
             dir_name=dir_name,
             jdftxinput_file=FILE_NAMES["in"],
             jdftxoutput_file=FILE_NAMES["out"],
-            # **jdftx_calculation_kwargs, # still need to implement
+            **jdftx_calculation_kwargs, # still need to implement
         )
 
         doc = cls.from_structure(

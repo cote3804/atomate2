@@ -11,7 +11,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.jdftx.inputs import JDFTXInfile
 from pymatgen.io.jdftx.joutstructure import JOutStructure
-from pymatgen.io.jdftx.outputs import JDFTXOutfile
+from pymatgen.io.jdftx.outputs import JDFTXOutfile, JDFTXOutputs
 
 from atomate2.jdftx.schemas.enums import CalcType, SolvationType, TaskType
 
@@ -39,7 +39,24 @@ class Convergence(BaseModel):
     )
 
     @classmethod
-    def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile) -> "Convergence":
+    def from_jdftxoutfile(cls, jdftxoutfile: JDFTXOutfile) -> "Convergence":
+        """Initialize Convergence from JDFTxOutfile."""
+        converged = jdftxoutfile.converged
+        jstrucs = jdftxoutfile.jstrucs
+        geom_converged = jstrucs.geom_converged
+        geom_converged_reason = jstrucs.geom_converged_reason
+        elec_converged = jstrucs.elec_converged
+        elec_converged_reason = jstrucs.elec_converged_reason
+        return cls(
+            converged=converged,
+            geom_converged=geom_converged,
+            geom_converged_reason=geom_converged_reason,
+            elec_converged=elec_converged,
+            elec_converged_reason=elec_converged_reason,
+        )
+
+    @classmethod
+    def from_jdftxoutputs(cls, jdftxoutputs: JDFTXOutputs) -> "Convergence":
         """Initialize Convergence from JDFTxOutfile."""
         converged = jdftxoutput.converged
         jstrucs = jdftxoutput.jstrucs
@@ -64,9 +81,9 @@ class RunStatistics(BaseModel):
     )
 
     @classmethod
-    def from_jdftxoutput(cls, jdftxoutput: JDFTXOutfile) -> "RunStatistics":
+    def from_jdftxoutfile(cls, jdftxoutfile: JDFTXOutfile) -> "RunStatistics":
         """Initialize RunStatistics from JDFTXOutfile."""
-        t_s = jdftxoutput.t_s if hasattr(jdftxoutput, "t_s") else None
+        t_s = jdftxoutfile.t_s if hasattr(jdftxoutfile, "t_s") else None
 
         return cls(total_time=t_s)
 
@@ -139,10 +156,89 @@ class CalculationOutput(BaseModel):
     trajectory: Optional[Trajectory] = (
         Field(None, description="Ionic trajectory from last JDFTx run"),
     )
+    eigenvals: Optional[np.ndarray] = (
+        Field(
+            None,
+            description="Kohn-Sham eigenvalues for each band-state in "
+            "array of shape (state, band)"
+            )
+    )
+    bandProjections: Optional[np.ndarray] = (
+        Field(
+            None,
+            description="Complex projections of atomic orbitals onto band-states in "
+            "array of shape (state, band, orbital)"
+            )
+    )
+    orb_label_list: Optional[tuple[str, ...]] = (
+        Field(
+            None,
+            description="List of descriptive orbital tags in the order they appear in bandProjections"
+        )
+    )
 
     @classmethod
-    def from_jdftxoutput(
-        cls, jdftxoutput: JDFTXOutfile, **kwargs
+    def from_jdftxoutputs(
+        cls, jdftxoutputs: JDFTXOutputs, **kwargs
+    ) -> "CalculationOutput":
+        """
+        Create a JDFTx output document from a JDFTXOutputs object.
+
+        Parameters
+        ----------
+        jdftxoutputs
+            A JDFTXOutputs object.
+
+        Returns
+        -------
+        CalculationOutput
+            The output document.
+        """
+        jdftxoutfile = jdftxoutputs.outfile
+        optimized_structure: Structure = jdftxoutfile.structure
+        forces = jdftxoutfile.forces.tolist() if hasattr(jdftxoutfile, "forces") else None
+        if hasattr(jdftxoutfile, "stress"):
+            stress = None if jdftxoutfile.stress is None else jdftxoutfile.stress.tolist()
+        else:
+            stress = None
+        energy = jdftxoutfile.e
+        energy_type = jdftxoutfile.eopt_type
+        mu = jdftxoutfile.mu
+        lowdin_charges = optimized_structure.site_properties.get("charges", None)
+        # total charge in number of electrons (negative of oxidation state)
+        total_charge = (
+            jdftxoutfile.total_electrons_uncharged - jdftxoutfile.total_electrons
+        )
+        cbm = jdftxoutfile.lumo
+        vbm = jdftxoutfile.homo
+        structure = joutstruct_to_struct(joutstruct=optimized_structure)
+        if kwargs.get("store_trajectory", True):
+            trajectory: Trajectory = jdftxoutfile.trajectory
+            trajectory = trajectory.as_dict()
+        else:
+            trajectory = None
+        
+        return cls(
+            structure=structure,
+            forces=forces,
+            energy=energy,
+            energy_type=energy_type,
+            mu=mu,
+            lowdin_charges=lowdin_charges,
+            total_charge=total_charge,
+            stress=stress,
+            cbm=cbm,
+            vbm=vbm,
+            trajectory=trajectory,
+            parameters=jdftxoutfile.to_dict(),
+            eigenvals=jdftxoutputs.eigenvals,
+            bandProjections=jdftxoutputs.bandProjections,
+            orb_label_list=jdftxoutputs.orb_label_list,
+        )
+
+    @classmethod
+    def from_jdftxoutfile(
+        cls, jdftxoutfile: JDFTXOutfile, **kwargs
     ) -> "CalculationOutput":
         """
         Create a JDFTx output document from a JDFTXOutfile object.
@@ -157,25 +253,25 @@ class CalculationOutput(BaseModel):
         CalculationOutput
             The output document.
         """
-        optimized_structure: Structure = jdftxoutput.structure
-        forces = jdftxoutput.forces.tolist() if hasattr(jdftxoutput, "forces") else None
-        if hasattr(jdftxoutput, "stress"):
-            stress = None if jdftxoutput.stress is None else jdftxoutput.stress.tolist()
+        optimized_structure: Structure = jdftxoutfile.structure
+        forces = jdftxoutfile.forces.tolist() if hasattr(jdftxoutfile, "forces") else None
+        if hasattr(jdftxoutfile, "stress"):
+            stress = None if jdftxoutfile.stress is None else jdftxoutfile.stress.tolist()
         else:
             stress = None
-        energy = jdftxoutput.e
-        energy_type = jdftxoutput.eopt_type
-        mu = jdftxoutput.mu
+        energy = jdftxoutfile.e
+        energy_type = jdftxoutfile.eopt_type
+        mu = jdftxoutfile.mu
         lowdin_charges = optimized_structure.site_properties.get("charges", None)
         # total charge in number of electrons (negative of oxidation state)
         total_charge = (
-            jdftxoutput.total_electrons_uncharged - jdftxoutput.total_electrons
+            jdftxoutfile.total_electrons_uncharged - jdftxoutfile.total_electrons
         )
-        cbm = jdftxoutput.lumo
-        vbm = jdftxoutput.homo
+        cbm = jdftxoutfile.lumo
+        vbm = jdftxoutfile.homo
         structure = joutstruct_to_struct(joutstruct=optimized_structure)
         if kwargs.get("store_trajectory", True):
-            trajectory: Trajectory = jdftxoutput.trajectory
+            trajectory: Trajectory = jdftxoutfile.trajectory
             trajectory = trajectory.as_dict()
         else:
             trajectory = None
@@ -191,7 +287,7 @@ class CalculationOutput(BaseModel):
             cbm=cbm,
             vbm=vbm,
             trajectory=trajectory,
-            parameters=jdftxoutput.to_dict(),
+            parameters=jdftxoutfile.to_dict(),
         )
 
 
@@ -219,11 +315,13 @@ class Calculation(BaseModel):
     def from_files(
         cls,
         dir_name: Union[Path, str],
-        jdftxinput_file: Union[Path, str],
-        jdftxoutput_file: Union[Path, str],
-        jdftxinput_kwargs: Optional[dict] = None,
-        jdftxoutput_kwargs: Optional[dict] = None,
-        # **jdftx_calculation_kwargs, #TODO implement optional calcdoc kwargs
+        jdftxinfile_rel_path: Union[Path, str],
+        jdftxoutfile_rel_path: Union[Path, str],
+        jdftxinfile_from_file_kwargs: Optional[dict] = None,
+        jdftxoutputs_from_calc_dir_kwargs: Optional[dict] = None,
+        calculationinput_from_jdftxinput_kwargs: Optional[dict] = None,
+        calculationoutput_from_jdftxoutputs_kwargs: Optional[dict] = None,
+        # task_name  # do we need task names? These are created by Custodian
     ) -> "Calculation":
         """
         Create a JDFTx calculation document from a directory and file paths.
@@ -241,29 +339,40 @@ class Calculation(BaseModel):
             :obj:`.JDFTXInFile.from_file` method
         jdftxoutput_kwargs
             Additional keyword arguments that will be passed to the
-            :obj:`.JDFTXOutFile.from_file` method
+            :obj:`.JDFTXOutputs.from_calc_dir` method
 
         Returns
         -------
         Calculation
             A JDFTx calculation document.
         """
-        jdftxinput_file = dir_name / jdftxinput_file
-        jdftxoutput_file = dir_name / jdftxoutput_file
+        jdftxinfile_path = dir_name / jdftxinfile_rel_path
+        jdftxoutfile_path = dir_name / jdftxoutfile_rel_path
 
-        jdftxinput_kwargs = jdftxinput_kwargs if jdftxinput_kwargs else {}
-        jdftxinput = JDFTXInfile.from_file(jdftxinput_file)
+        kwarg_ref = {
+            "input": jdftxinfile_from_file_kwargs,
+            "output": jdftxoutputs_from_calc_dir_kwargs,
+            "cinput": calculationinput_from_jdftxinput_kwargs,
+            "coutput": calculationoutput_from_jdftxoutputs_kwargs,
+        }
+        for key, kwargs in kwarg_ref.items():
+            if kwargs is None:
+                kwarg_ref[key] = {}
 
-        jdftxoutput_kwargs = jdftxoutput_kwargs if jdftxoutput_kwargs else {}
-        jdftxoutput = JDFTXOutfile.from_file(jdftxoutput_file)
+        jdftxinput = JDFTXInfile.from_file(jdftxinfile_path, **kwarg_ref["input"])
+        if not "outfile_name" in jdftxoutput_kwargs:
+            jdftxoutput_kwargs["outfile_name"] = jdftxoutfile_rel_path
+        jdftxoutputs = JDFTXOutputs.from_calc_dir(
+            dir_name,
+            **kwarg_ref["output"],
+            )
+        jdftxoutfile = jdftxoutput.outfile
 
-        input_doc = CalculationInput.from_jdftxinput(jdftxinput, **jdftxinput_kwargs)
-        output_doc = CalculationOutput.from_jdftxoutput(
-            jdftxoutput, **jdftxoutput_kwargs
-        )
+        input_doc = CalculationInput.from_jdftxinput(jdftxinput, **kwarg_ref["cinput"])
+        output_doc = CalculationOutput.from_jdftxoutputs(jdftxoutputs, **kwarg_ref["coutput"])
         logging.log(logging.DEBUG, f"{output_doc}")
-        converged = Convergence.from_jdftxoutput(jdftxoutput)
-        run_stats = RunStatistics.from_jdftxoutput(jdftxoutput)
+        converged = Convergence.from_jdftxoutfile(jdftxoutfile)
+        run_stats = RunStatistics.from_jdftxoutfile(jdftxoutfile)
 
         calc_type = _calc_type(output_doc)
         task_type = _task_type(output_doc)
