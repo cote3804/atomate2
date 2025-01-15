@@ -12,7 +12,7 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.jdftx.inputs import JDFTXInfile
 from pymatgen.io.jdftx.joutstructure import JOutStructure
 from pymatgen.io.jdftx.outputs import JDFTXOutfile, JDFTXOutputs
-import numpy as np
+from pydantic_numpy import NDArray
 
 from atomate2.jdftx.schemas.enums import CalcType, SolvationType, TaskType
 
@@ -157,14 +157,14 @@ class CalculationOutput(BaseModel):
     trajectory: Optional[Trajectory] = (
         Field(None, description="Ionic trajectory from last JDFTx run"),
     )
-    eigenvals: Optional[np.ndarray] = (
+    eigenvals: Optional[NDArray[float]] = (
         Field(
             None,
             description="Kohn-Sham eigenvalues for each band-state in "
             "array of shape (state, band)"
             )
     )
-    bandProjections: Optional[np.ndarray] = (
+    bandProjections: Optional[NDArray[complex | float]] = (
         Field(
             None,
             description="Complex projections of atomic orbitals onto band-states in "
