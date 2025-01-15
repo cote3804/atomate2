@@ -47,6 +47,9 @@ symmetries: none
 
 ### Pseudopotential ###
 ion-species: GBRV_v1.5/$ID_pbe_v1.uspp
+ion-species: GBRV/$ID_pbe_v1.uspp
+ion-species: GBRV/$ID_pbe_v1.2.uspp
+ion-species: GBRV/$ID_pbe_v1.4.uspp
 
 
 ### Output Files ###
