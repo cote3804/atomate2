@@ -241,7 +241,7 @@ class CalculationOutput(BaseModel):
             _bandProjections = jdftxoutputs.bandProjections.flatten()
             _bp_re = np.real(_bandProjections)
             _bp_im = np.imag(_bandProjections)
-            bandProjections = [_bp_re.tolist(), _bp_im.to_list()]
+            bandProjections = [_bp_re.tolist(), _bp_im.tolist()]
 
         
         return cls(
