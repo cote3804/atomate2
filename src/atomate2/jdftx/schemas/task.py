@@ -107,8 +107,8 @@ class TaskDoc(StructureMetadata):
         dir_name = Path(dir_name)
         calc_doc = Calculation.from_files(
             dir_name=dir_name,
-            jdftxinput_file=FILE_NAMES["in"],
-            jdftxoutput_file=FILE_NAMES["out"],
+            jdftxinfile_rel_path=FILE_NAMES["in"],
+            jdftxoutfile_rel_path=FILE_NAMES["out"],
             **jdftx_calculation_kwargs, # still need to implement
         )
 
