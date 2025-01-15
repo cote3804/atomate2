@@ -71,11 +71,11 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
     list[Structure]
         The molecule structures.
     """
-    molecule_structures = defaultdict(list)
+    molecule_structures = []
 
     for i, molecule in enumerate(molecules):
         boxed_molecule = molecule.get_boxed_structure(10, 10, 10)
-        molecule_structures[i] = boxed_molecule
+        molecule_structures.append(boxed_molecule)
 
     return  molecule_structures
 
