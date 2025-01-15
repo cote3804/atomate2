@@ -12,6 +12,7 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.jdftx.inputs import JDFTXInfile
 from pymatgen.io.jdftx.joutstructure import JOutStructure
 from pymatgen.io.jdftx.outputs import JDFTXOutfile, JDFTXOutputs
+import numpy as np
 
 from atomate2.jdftx.schemas.enums import CalcType, SolvationType, TaskType
 
