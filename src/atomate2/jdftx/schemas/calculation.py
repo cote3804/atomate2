@@ -157,14 +157,14 @@ class CalculationOutput(BaseModel):
     trajectory: Optional[Trajectory] = (
         Field(None, description="Ionic trajectory from last JDFTx run"),
     )
-    eigenvals: Optional[NDArray[float]] = (
+    eigenvals: Optional[NDArray] = (
         Field(
             None,
             description="Kohn-Sham eigenvalues for each band-state in "
             "array of shape (state, band)"
             )
     )
-    bandProjections: Optional[NDArray[complex | float]] = (
+    bandProjections: Optional[NDArray] = (
         Field(
             None,
             description="Complex projections of atomic orbitals onto band-states in "
