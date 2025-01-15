@@ -298,7 +298,7 @@ class JdftxInputGenerator(InputGenerator):
             for suffix in _PSEUDO_CONFIG[self.pseudopotentials]["suffixes"]
         ]
         # do not override pseudopotentials in settings
-        if "ion-species" in self.settings:
+        if "ion-species" in self.user_settings:
             return
         self.settings["ion-species"] = add_tags
         return
