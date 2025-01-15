@@ -233,7 +233,7 @@ class CalculationOutput(BaseModel):
         bandProjections_shape = None
         bandProjections = None
         if not jdftxoutputs.eigenvals is None:
-            eigenvals = dftxoutputs.eigenvals.flatten().tolist(),
+            eigenvals = jdftxoutputs.eigenvals.flatten().tolist(),
         if not jdftxoutputs.bandProjections is None:
             bandProjections_shape = jdftxoutputs.bandProjections.shape
             bandProjections = jdftxoutputs.bandProjections.flatten().tolist()
