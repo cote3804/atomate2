@@ -367,7 +367,7 @@ class Calculation(BaseModel):
             dir_name,
             **kwarg_ref["output"],
             )
-        jdftxoutfile = jdftxoutput.outfile
+        jdftxoutfile = jdftxoutputs.outfile
 
         input_doc = CalculationInput.from_jdftxinput(jdftxinput, **kwarg_ref["cinput"])
         output_doc = CalculationOutput.from_jdftxoutputs(jdftxoutputs, **kwarg_ref["coutput"])
