@@ -13,6 +13,7 @@ from pymatgen.io.jdftx.inputs import JDFTXInfile
 from pymatgen.io.jdftx.joutstructure import JOutStructure
 from pymatgen.io.jdftx.outputs import JDFTXOutfile, JDFTXOutputs
 from numpydantic import NDArray
+import numpy as np
 
 from atomate2.jdftx.schemas.enums import CalcType, SolvationType, TaskType
 
@@ -168,9 +169,10 @@ class CalculationOutput(BaseModel):
     bandProjections: Optional[list] = (
         Field(
             None,
-            description="Complex projections of atomic orbitals onto band-states in "
-            "list form of length nStates x nBands x nOrbitals following"
-            "standard C-ordering."
+            description="Complex projections of orbitals onto band-states. "
+            "First sub-list gives real components and second gives imaginary."
+            " Sub-lists are of length nStates x nBands x nOrbitals following"
+            " standard C-ordering."
             )
     )
     bandProjections_shape: Optional[tuple] = (
@@ -236,7 +238,11 @@ class CalculationOutput(BaseModel):
             eigenvals = jdftxoutputs.eigenvals.flatten().tolist(),
         if not jdftxoutputs.bandProjections is None:
             bandProjections_shape = jdftxoutputs.bandProjections.shape
-            bandProjections = jdftxoutputs.bandProjections.flatten().tolist()
+            _bandProjections = jdftxoutputs.bandProjections.flatten()
+            _bp_re = np.real(_bandProjections)
+            _bp_im = np.imag(_bandProjections)
+            bandProjections = [_bp_re.tolist(), _bp_im.to_list()]
+
         
         return cls(
             structure=structure,
