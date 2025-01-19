@@ -221,15 +221,15 @@ def generate_dict(
 def run_slabs_job(
     slabs_output: list[dict],
     min_maker: SurfaceMinMaker,
-    bulk_structure: Structure,
-    bulk_energy: float,
-    calculate_surface_energy: bool = False,
+    # bulk_structure: Structure,
+    # bulk_energy: float,
+    # calculate_surface_energy: bool = False,
 ) -> Response:
     
-    if calculate_surface_energy and (bulk_structure is None or bulk_energy is None):
-        raise ValueError(
-            "bulk_structure and bulk_energy must be provided if calculate_surface_energy is True"
-     )
+    # if calculate_surface_energy and (bulk_structure is None or bulk_energy is None):
+    #     raise ValueError(
+    #         "bulk_structure and bulk_energy must be provided if calculate_surface_energy is True"
+    #  )
 
     termination_jobs = []
     slab_outputs = defaultdict(list)
