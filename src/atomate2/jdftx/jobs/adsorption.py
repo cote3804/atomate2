@@ -71,11 +71,11 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
     list[Structure]
         The molecule structures.
     """
-    molecule_structures = defaultdict(list)
+    molecule_structures = []
 
     for i, molecule in enumerate(molecules):
         boxed_molecule = molecule.get_boxed_structure(10, 10, 10)
-        molecule_structures[i] = boxed_molecule
+        molecule_structures.append(boxed_molecule)
 
     return  molecule_structures
 
@@ -83,10 +83,10 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
 @job
 def generate_slabs(
     bulk_structure: Structure,
-    min_slab_size: float, #default in flow
-    surface_idx: tuple, #default in flow
-    min_vacuum_size: float, #default in flow
-    min_lw: float, #default in flow
+    min_slab_size: float = 2.0, 
+    surface_idx: tuple[int, int, int] = (1, 0, 0),
+    min_vacuum_size: float = 20.0,
+    min_lw: float = 10.0,
     in_unit_planes: bool = True,
     center_slab: bool = True,
     lll_reduce: bool = True,
