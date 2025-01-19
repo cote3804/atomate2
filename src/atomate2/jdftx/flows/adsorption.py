@@ -80,7 +80,7 @@ class AdsorptionMaker(BaseJdftxMaker):
             bulk_optimize_job = self.bulk_relax_maker.make(
                 structure=bulk
             )
-            bulk_optimize_job.name = "bulk_relax_job"
+            bulk_optimize_job.name = "bulk_job"
             jobs += [bulk_optimize_job]
 
 

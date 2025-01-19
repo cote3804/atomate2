@@ -83,10 +83,10 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
 @job
 def generate_slabs(
     bulk_structure: Structure,
-    min_slab_size: float, #default in flow
-    surface_idx: tuple, #default in flow
-    min_vacuum_size: float, #default in flow
-    min_lw: float, #default in flow
+    min_slab_size: float = 2.0,
+    surface_idx: tuple = (1, 0, 0),
+    min_vacuum_size: float = 20.0,
+    min_lw: float = 10.0,
     in_unit_planes: bool = True,
     center_slab: bool = True,
     lll_reduce: bool = True,
@@ -237,7 +237,7 @@ def run_slabs_job(
 
     for i, slab in enumerate(slab_structures):
         slab_job = min_maker.make(structure=slab)
-        slab_job.append_name(f"slab_{i}")
+        slab_job.name = f"slab_{i}_job"
         termination_jobs.append(slab_job)
 
 
