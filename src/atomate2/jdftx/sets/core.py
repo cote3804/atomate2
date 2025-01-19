@@ -45,7 +45,7 @@ class LatticeMinSetGenerator(JdftxInputGenerator):
         }
     )
 
-
+@dataclass
 class BEASTSetGenerator(JdftxInputGenerator):
     """Generate BEAST Database ionic relaxation set."""
 
