@@ -105,9 +105,10 @@ class AdsorptionMaker(BaseJdftxMaker):
         run_slab_calcs = run_slabs_job(
             slabs_output=slabs_output,
             min_maker=self.slab_relax_maker,
-            bulk_structure=optimized_bulk,
-            bulk_energy=optimized_bulk_energy,
-            calculate_surface_energy=True)
+            # bulk_structure=optimized_bulk,
+            # bulk_energy=optimized_bulk_energy,
+            # calculate_surface_energy=True
+            )
 
         jobs += [run_slab_calcs] #need to do surface energy calc after this! this should return a dict output that can be added to.
         slab_calcs_outputs = run_slab_calcs.output #dict
