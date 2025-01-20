@@ -244,7 +244,7 @@ class Atomate2Settings(BaseSettings):
     )
 
     JDFTX_CMD: str = Field(
-        "jdftx", 
+        "jdftx_gpu", 
         description="Command to run jdftx."
     )
 
