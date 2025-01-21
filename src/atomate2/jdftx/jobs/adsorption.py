@@ -13,6 +13,7 @@ from pymatgen.core.surface import (
     SlabGenerator,
     Slab
 )
+import numpy as np
 
 from pymatgen.core import Molecule, Structure
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
@@ -83,8 +84,8 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
 @job
 def generate_slabs(
     bulk_structure: Structure,
-    min_slab_size: float = 2.0,
-    surface_idx: tuple = (1, 0, 0),
+    min_slab_size: float = 2.0, 
+    surface_idx: tuple[int, int, int] = (1, 0, 0),
     min_vacuum_size: float = 20.0,
     min_lw: float = 10.0,
     in_unit_planes: bool = True,
@@ -400,6 +401,7 @@ def generate_surface_energies(
     slabs_outputs: list[Slab],
     bulk_structure: Structure,
     bulk_energy: float,
+    surface_idx: tuple
 ) -> list[float]:
     """
     Calculate surface energies for multiple oxide slabs using oxygen as reference.
@@ -437,6 +439,9 @@ def generate_surface_energies(
     } #just have Ir for now, see comment below
     
     for slab, slab_energy in zip(slab_structures, slab_energies):
+        if not isinstance(slab, Slab):
+            slab = slab_from_structure(slab, surface_idx)
+
         slab_composition = slab.composition.get_el_amt_dict()
         slab_area = slab.surface_area
 
@@ -478,7 +483,34 @@ def generate_surface_energies(
     return surface_energies
         
 
+def slab_from_structure(
+        structure: Structure,
+        surface_idx: tuple
+        ) -> Slab:
+    """
+    Convert a Structure to a Slab.
 
+    Parameters
+    ----------
+    miller : tuple
+        Miller indices given as tuple of ints
+    structure : pymatgen.core.structure.Structure
+        Structure to be converted into a Slab
+
+    Returns
+    -------
+    pymatgen.core.surface.Slab
+        The input structure converted to a Slab
+
+    """
+    return Slab(lattice=structure.lattice,
+                species=structure.species_and_occu,
+                coords=structure.frac_coords,
+                miller_index=surface_idx,
+                oriented_unit_cell=structure,
+                shift=0,
+                scale_factor=np.eye(3, dtype=int),
+                site_properties=structure.site_properties)
 
 
 
