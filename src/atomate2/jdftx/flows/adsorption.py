@@ -121,6 +121,7 @@ class AdsorptionMaker(BaseJdftxMaker):
             slabs_outputs=slab_calcs_outputs,
             bulk_structure=optimized_bulk,
             bulk_energy=optimized_bulk_energy,
+            surface_idx=self.surface_idx
         )
         
         jobs += [surface_energy_calcs]
