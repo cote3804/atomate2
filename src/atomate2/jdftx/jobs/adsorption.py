@@ -435,7 +435,7 @@ def generate_surface_energies(
     surface_energies = []
     ref_element = "O"
     metal_bulk_energies = {
-        "Ir": -76.494584,
+        "Ir": -76.494584*27.2114,
     } #just have Ir for now, see comment below
     
     for slab, slab_energy in zip(slab_structures, slab_energies):
