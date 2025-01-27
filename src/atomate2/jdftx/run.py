@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from custodian import Custodian
 from custodian.jdftx.jobs import JDFTxJob
 from jobflow.utils import ValueEnum
 
@@ -46,6 +47,7 @@ def run_jdftx(
         )
 
     job.run()
+#   custodian = Custodian()
 
 
 def should_stop_children(
