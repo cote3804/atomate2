@@ -244,7 +244,7 @@ class Atomate2Settings(BaseSettings):
     )
 
     JDFTX_CMD: str = Field(
-        "jdftx_gpu", 
+        "/nopt/nrel/apps/software/jdftx/builds/1.7.0-gpu/jdftx/build/jdftx_gpu", 
         description="Command to run jdftx."
     )
 
