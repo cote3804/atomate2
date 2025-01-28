@@ -38,6 +38,9 @@ def run_jdftx(
     if jdftx_cmd is None:
         jdftx_cmd = get_jdftx_cmd()
 
+    with open("command_in_python", "w") as f:
+        f.write(jdftx_cmd)
+
     if job_type == JobType.NORMAL:
         job = JDFTxJob(
             jdftx_cmd,

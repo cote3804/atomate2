@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -48,13 +47,16 @@ class SurfaceMinMaker(BaseJdftxMaker):
             calc_type="surface",
         )
     )
+
+
 @dataclass
 class MolMinMaker(BaseJdftxMaker):
     """Maker to create molecule relaxation job."""
-    name: str = "molecule_ionic_min"
+
+    name: str = "surface_ionic_min"
     input_set_generator: JdftxInputGenerator = field(
-        default_factory= lambda: IonicMinSetGenerator(
-            coulomb_truncation = True,
+        default_factory=IonicMinSetGenerator(
+            coulomb_truncation=True,
             calc_type="molecule",
         )
     )

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from importlib.resources import files as get_mod_path
@@ -136,7 +135,18 @@ class JdftxInputGenerator(InputGenerator):
                 "types: {calc_type_options}."
             )
         self.settings = self.default_settings.copy()
-        self.settings.update(self.user_settings)
+        # users can pass a jdftx tag as a key with value None
+        # to remove the tag from the settings
+        user_keys_to_remove = []
+        for k, v in self.user_settings.items():
+            if v is None and k in self.settings:
+                self.settings.pop(k)
+                user_keys_to_remove.append(k)
+            else:
+                self.settings[k] = v
+        # remove None keys from user_settings so that they
+        # aren't use to update self.settings later.
+        [self.user_settings.pop(k) for k in user_keys_to_remove]
         # set default coords-type to Cartesian
         if "coords-type" not in self.settings:
             self.settings["coords-type"] = "Cartesian"
@@ -164,7 +174,7 @@ class JdftxInputGenerator(InputGenerator):
         JdftxInputSet
             A JDFTx input set.
         """
-        self.settings.update(self.user_settings) 
+        self.settings.update(self.user_settings)
         self.set_kgrid(structure=structure)
         self.set_coulomb_interaction(structure=structure)
         self.set_nbands(structure=structure)
@@ -196,12 +206,13 @@ class JdftxInputGenerator(InputGenerator):
         if "kpoint-folding" in self.user_settings:
             return
         # calculate k-grid with k-point density
-        kpoints = Kpoints.automatic_density(
-            structure=structure, kppa=self.auto_kpoint_density
-        )
-        kpoints = kpoints.kpts[0]
-        if self.calc_type == "surface":
-            kpoints = (kpoints[0], kpoints[1], 1)
+        if self.calc_type != "molecule":
+            kpoints = Kpoints.automatic_density(
+                structure=structure, kppa=self.auto_kpoint_density
+            )
+            kpoints = kpoints.kpts[0]
+            if self.calc_type == "surface":
+                kpoints = (kpoints[0], kpoints[1], 1)
         elif self.calc_type == "molecule":
             kpoints = (1, 1, 1)
         kpoint_update = {
@@ -268,10 +279,9 @@ class JdftxInputGenerator(InputGenerator):
         for atom in structure.species:
             nelec += _PSEUDO_CONFIG[self.pseudopotentials][str(atom)]
         nbands_add = int(nelec / 2) + 10
-        nbands_mult = int((nelec/2)) * _BEAST_CONFIG["bands_multiplier"]
+        nbands_mult = int(nelec / 2) * _BEAST_CONFIG["bands_multiplier"]
         self.settings["elec-n-bands"] = max(nbands_add, nbands_mult)
-        return
-             
+
     def set_pseudos(
         self,
     ) -> None:
@@ -288,7 +298,7 @@ class JdftxInputGenerator(InputGenerator):
             for suffix in _PSEUDO_CONFIG[self.pseudopotentials]["suffixes"]
         ]
         # do not override pseudopotentials in settings
-        if "ion-species" in self.settings:
+        if "ion-species" in self.user_settings:
             return
         self.settings["ion-species"] = add_tags
         return
