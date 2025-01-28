@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from importlib.resources import files as get_mod_path
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+import logging
 
 import numpy as np
 from monty.serialization import loadfn
@@ -308,10 +309,14 @@ class JdftxInputGenerator(InputGenerator):
         # never override mu in settings
         if "target-mu" in self.settings or self.potential is None:
             return
-        solvent_model = self.settings["pcm-variant"]
+        if "pcm-variant" in self.settings:
+            solvent_model = self.settings["pcm-variant"]
+        else:
+            solvent_model = "CANDLE"
+            logging.warning("No solvent model specified, using CANDLE to set mu.")
         ashep = _BEAST_CONFIG["ASHEP"][solvent_model]
         # calculate absolute potential in Hartree
-        mu = -(ashep - self.potential) / eV_to_Ha
+        mu = (ashep - self.potential) * eV_to_Ha
         self.settings["target-mu"] = {"mu": mu}
         return
 
