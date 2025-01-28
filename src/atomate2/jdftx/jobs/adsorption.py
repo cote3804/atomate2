@@ -26,6 +26,7 @@ from atomate2.jdftx.sets.core import (
 )
 
 from atomate2.jdftx.sets.base import JdftxInputGenerator
+from pymatgen.core.units import eV_to_Ha
 
 from atomate2.jdftx.jobs.base import BaseJdftxMaker
 from atomate2.jdftx.sets.core import IonicMinSetGenerator
@@ -435,7 +436,7 @@ def generate_surface_energies(
     surface_energies = []
     ref_element = "O"
     metal_bulk_energies = {
-        "Ir": -76.494584*27.2114,
+        "Ir": -76.494584/eV_to_Ha,
     } #just have Ir for now, see comment below
     
     for slab, slab_energy in zip(slab_structures, slab_energies):
