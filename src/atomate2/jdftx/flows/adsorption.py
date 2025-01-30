@@ -24,20 +24,24 @@ from atomate2.jdftx.jobs.adsorption import (
     SurfaceMinMaker
 
 )
-from atomate2.jdftx.jobs.core import IonicMinMaker, LatticeMinMaker
+from atomate2.jdftx.jobs.core import IonicMinMaker
 
 @dataclass
 class AdsorptionMaker(BaseJdftxMaker):
     mol_relax_maker: Maker | None = field(default_factory=MolMinMaker)
-    bulk_relax_maker: Maker | None = field(default_factory=LatticeMinMaker)
+    bulk_relax_maker: Maker | None = field(default_factory=IonicMinMaker)
     slab_relax_maker: Maker | None = field(default_factory=SurfaceMinMaker)
-    min_slab_size: float = 2.0
+    min_slab_size: float = 4.0
     min_vacuum: float = 20.0
     min_lw: float = 10.0
     surface_idx: tuple[int, int, int] = (1, 0, 0)
+    in_unit_planes: bool = True
+    center_slab: bool = True
+    reorien_lattice: bool = True
     max_index: int = 1
     site_type: list[str] = field(default_factory=lambda: ["ontop", "bridge", "hollow"])
     min_displacement: float = 2.0
+    super_cell: list = [1, 1, 1]
 
     def make(
         self,
@@ -112,10 +116,6 @@ class AdsorptionMaker(BaseJdftxMaker):
 
         jobs += [run_slab_calcs] #need to do surface energy calc after this! this should return a dict output that can be added to.
         slab_calcs_outputs = run_slab_calcs.output #dict
-        slab_calcs_energies = slab_calcs_outputs["energies"]
-        slab_calcs_structures = slab_calcs_outputs["relaxed_structures"]
-
-        
 
         surface_energy_calcs = generate_surface_energies(
             slabs_outputs=slab_calcs_outputs,
@@ -136,11 +136,11 @@ class AdsorptionMaker(BaseJdftxMaker):
         )
         jobs += [selected_slab]
 
-        # slab_structure = selected_slab.output["relaxed_structure"]
+        slab_structure = selected_slab.output["relaxed_structure"]
         # slab_energy = selected_slab.output["energy"]
 
         # ads_structures = generate_ads_slabs(
-        #     slab=slab_structure,
+        #     slabs_outputs = slab_calcs_outputs,
         #     adsorbates=molecules,
         #     min_displacement=self.min_displacement,
         #     site_type=self.site_type)
