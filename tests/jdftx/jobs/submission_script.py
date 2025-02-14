@@ -3,7 +3,7 @@ from jobflow_remote import submit_flow
 from jobflow import Flow
 from atomate2.jdftx.jobs.core import SinglePointMaker
 from atomate2.jdftx.jobs.base import BaseJdftxMaker
-from atomate2.jdftx.jobs.adsorption import MolMinMaker
+from atomate2.jdftx.jobs.surface import MolMinMaker
 from atomate2.jdftx.sets.base import JdftxInputGenerator
 from pymatgen.core.structure import Structure, Molecule
 

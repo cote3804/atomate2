@@ -1,4 +1,4 @@
-from atomate2.jdftx.jobs.adsorption import SurfaceMinMaker
+from atomate2.jdftx.jobs.surface import SurfaceMinMaker
 from pymatgen.core import Structure, Molecule
 from atomate2.jdftx.sets.core import SinglePointSetGenerator
 from jobflow import run_locally

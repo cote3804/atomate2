@@ -2,8 +2,8 @@ from pymatgen.core.structure import Molecule, Structure
 from atomate2.jdftx.flows.adsorption import AdsorptionMaker
 from atomate2.jdftx.sets.core import SinglePointSetGenerator
 from atomate2.jdftx.flows.adsorption import AdsorptionMaker
-from atomate2.jdftx.jobs.adsorption import MolMinMaker
-from atomate2.jdftx.jobs.adsorption import SurfaceMinMaker
+from atomate2.jdftx.jobs.surface import MolMinMaker
+from atomate2.jdftx.jobs.surface import SurfaceMinMaker
 from atomate2.jdftx.jobs.core import IonicMinMaker
 from jobflow import run_locally
 
