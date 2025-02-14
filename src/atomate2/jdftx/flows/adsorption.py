@@ -9,7 +9,7 @@ from jobflow import Flow, Job, Maker
 from pymatgen.core.structure import Molecule, Structure
 from pathlib import Path
 from atomate2.jdftx.jobs.base import BaseJdftxMaker
-from atomate2.jdftx.jobs.adsorption import (
+from atomate2.jdftx.jobs.surface import (
     get_boxed_molecules,
     run_molecule_job,
     generate_dict,

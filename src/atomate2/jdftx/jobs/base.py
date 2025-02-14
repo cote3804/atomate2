@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 _DATA_OBJECTS = [  # TODO update relevant list for JDFTx
     BandStructure,
     BandStructureSymmLine,
-    Trajectory,
     "force_constants",
     "normalmode_eigenvecs",
     "bandstructure",  # FIX: BandStructure is not currently MSONable
@@ -100,6 +99,7 @@ class BaseJdftxMaker(Maker):
     write_input_set_kwargs: dict = field(default_factory=dict)
     run_jdftx_kwargs: dict = field(default_factory=dict)
     task_document_kwargs: dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
 
     @jdftx_job
     def make(self, structure: Structure) -> Response:
@@ -138,3 +138,9 @@ class BaseJdftxMaker(Maker):
 def get_jdftx_task_document(path: Path | str, **kwargs) -> TaskDoc:
     """Get JDFTx Task Document using atomate2 settings."""
     return TaskDoc.from_directory(path, **kwargs)
+
+class JdftxTaskDoc(BaseJdftxMaker):
+    @jdftx_job
+    def make(self, dir_path):
+        task_doc = get_jdftx_task_document(dir_path)
+        return task_doc
