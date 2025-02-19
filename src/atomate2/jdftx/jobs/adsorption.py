@@ -119,6 +119,7 @@ def generate_slabs(
 
     for slab in slabs:
         slab.make_supercell(super_cell)
+        slab.get_orthogonal_c_slab()
 
     logger.info(f"Generated {len(slabs)} slabs for {surface_idx} surface")
 
