@@ -37,7 +37,7 @@ class AdsorptionMaker(BaseJdftxMaker):
     surface_idx: tuple[int, int, int] = (1, 0, 0)
     in_unit_planes: bool = True
     center_slab: bool = True
-    reorien_lattice: bool = True
+    reorient_lattice: bool = True
     max_index: int = 1
     site_type: list[str] = field(default_factory=lambda: ["ontop", "bridge", "hollow"])
     min_displacement: float = 2.0
@@ -92,7 +92,7 @@ class AdsorptionMaker(BaseJdftxMaker):
             optimized_bulk_energy= bulk_optimize_job.output.calc_outputs.energy 
 
         else:   
-            optimized_bulk = bulk # if no bulk relax
+            optimized_bulk = bulk # if no bulk relax #atill need energy somehow?
 
         generate_slab_structures = generate_slabs(
             bulk_structure=optimized_bulk,
@@ -100,6 +100,7 @@ class AdsorptionMaker(BaseJdftxMaker):
             surface_idx=self.surface_idx,
             min_vacuum_size=self.min_vacuum,
             min_lw=self.min_lw,
+            super_cell=self.super_cell,
         ) 
 
         jobs += [generate_slab_structures]
