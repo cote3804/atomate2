@@ -41,7 +41,7 @@ class AdsorptionMaker(BaseJdftxMaker):
     max_index: int = 1
     site_type: list[str] = field(default_factory=lambda: ["ontop", "bridge", "hollow"])
     min_displacement: float = 2.0
-    super_cell: list = [1, 1, 1]
+    super_cell: list = field(default_factory=lambda: [1, 1, 1])
 
     def make(
         self,
