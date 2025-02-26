@@ -13,7 +13,7 @@ from pymatgen.core.surface import (
     Slab
 )
 import numpy as np
-
+from pymatgen.core.units import eV_to_Ha
 from pymatgen.core import Molecule, Structure
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
 
@@ -410,11 +410,7 @@ def generate_surface_energies(
     All slabs should contain the same elements as the bulk structure. 
     
     Args:
-        slab_structures: List of surface slab structures
-        bulk_structure: Bulk structure reference
-        slab_energies: List of DFT energies for each slab (eV)
-        bulk_energy: DFT energy of bulk (eV)
-        slab_areas: Surface areas of each slab (Å²)
+        
     
     Returns:
         list[float]: Surface energies (eV/Å²) for each slab
@@ -437,7 +433,7 @@ def generate_surface_energies(
     surface_energies = []
     ref_element = "O"
     metal_bulk_energies = {
-        "Ir": -76.494584,
+        "Ir": -76.494584/eV_to_Ha,
     } #just have Ir for now, see comment below
     
     for slab, slab_energy in zip(slab_structures, slab_energies):
