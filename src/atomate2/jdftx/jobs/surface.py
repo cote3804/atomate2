@@ -47,6 +47,12 @@ class SurfaceMinMaker(BaseJdftxMaker):
             calc_type="surface",
         )
     )
+    def __post_init__(self):
+        super().__post_init__() if hasattr(super(), "__post_init__") else None
+
+        self.metadata.update({
+            "calculation_type": "slab",
+        })
 
 
 @dataclass
