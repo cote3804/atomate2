@@ -21,7 +21,7 @@ store = JobStore(docs_store=store, additional_stores={"data": store})
 
 # IrO2_structure = Structure.from_file("/pscratch/sd/s/soge8904/jobflow/IrO2/POSCAR_IrO2")
 
-from atomate2.jdftx.jobs.adsorption import SurfaceMinMaker
+from atomate2.jdftx.jobs.surface import SurfaceMinMaker
 from pymatgen.core import Structure
 from atomate2.jdftx.sets.core import SinglePointSetGenerator
 from jobflow import run_locally
