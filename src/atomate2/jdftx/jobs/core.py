@@ -29,6 +29,13 @@ class SinglePointMaker(BaseJdftxMaker):
         default_factory=SinglePointSetGenerator
     )
 
+    def __post_init__(self):
+        super().__post_init__() if hasattr(super(), "__post_init__") else None
+
+        self.metadata.update({
+            "calculation_type": "bulk",
+        })
+
 
 @dataclass
 class IonicMinMaker(BaseJdftxMaker):
