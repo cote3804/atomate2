@@ -132,7 +132,6 @@ class BaseJdftxMaker(Maker):
             stop_children=stop_children,
             #stored_data={},
             output=task_doc,
-            metadata=self.metadata
         )
 
 
