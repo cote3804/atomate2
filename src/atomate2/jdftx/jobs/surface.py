@@ -47,6 +47,7 @@ class SurfaceMinMaker(BaseJdftxMaker):
             calc_type="surface",
         )
     )
+    
     def __post_init__(self):
         super().__post_init__() if hasattr(super(), "__post_init__") else None
 
@@ -88,6 +89,14 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
 
     return  molecule_structures
 
+@job
+def generate_supercell(structure, super_cell) -> Structure:
+    if structure is dict:
+        structure = Structure.from_dict(structure)
+    if structure is not Structure:
+        raise TypeError("structure must be a Structure object or dict")
+    supercell = structure.make_supercell(super_cell)
+    return supercell
 
 @job
 def generate_slabs(

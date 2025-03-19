@@ -48,7 +48,7 @@ class LatticeMinSetGenerator(JdftxInputGenerator):
 @dataclass
 class BEASTSetGenerator(JdftxInputGenerator):
     """Generate BEAST Database ionic relaxation set."""
-
+    opt_type = "Ionic Optimization"
     default_settings: dict = field(
         default_factory=lambda: {
             **_BASE_JDFTX_SET,
