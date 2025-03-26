@@ -70,7 +70,7 @@ class JdftxInputSet(InputSet):
             raise FileExistsError(f"{directory / infile} already exists.")
 
         jdftxinput = condense_jdftxinputs(self.jdftxinput, self.jdftxstructure)
-
+        print("jdftxinput_write_input:", jdftxinput)
         jdftxinput.write_file(filename=(directory / infile))
 
     @staticmethod
@@ -125,43 +125,45 @@ class JdftxInputGenerator(InputGenerator):
     calc_type: str = "bulk"
     pseudopotentials: str = "GBRV"
     config_dict: dict = field(default_factory=lambda: _BEAST_CONFIG)
-    default_settings: dict = field(default_factory=lambda: _BASE_JDFTX_SET)
+    
+    _default_settings: dict = field(default_factory=lambda: _BASE_JDFTX_SET, repr=False)
+    _settings: dict = field(init=False, repr=False, default_factory=dict)
 
     def __post_init__(self) -> None:
-        """Post init formatting of arguments."""
-        calc_type_options = ["bulk", "surface", "molecule"]
-        if self.calc_type not in calc_type_options:
+        """Initialize settings by combining defaults with user overrides."""
+        valid_calc_types = ["bulk", "surface", "molecule"]
+        if self.calc_type not in valid_calc_types:
             raise ValueError(
                 f"calc type f{self.calc_type} not in list of supported calc "
-                "types: {calc_type_options}."
+                "types: {valid_calc_types}."
             )
-        self.settings = self.default_settings.copy()
+        self._settings = self._default_settings.copy()
         # users can pass a jdftx tag as a key with value None
         # to remove the tag from the settings
-        user_keys_to_remove = []
-        for k, v in self.user_settings.items():
-            if v is None and k in self.settings:
-                self.settings.pop(k)
-                user_keys_to_remove.append(k)
-            else:
-                self.settings[k] = v
+        filtered_user_settings = {k: v for k, v in self.user_settings.items() if v is not None}
+
         # remove None keys from user_settings so that they
         # aren't use to update self.settings later.
-        [self.user_settings.pop(k) for k in user_keys_to_remove]
-        # set default coords-type to Cartesian
-        if "coords-type" not in self.settings:
-            self.settings["coords-type"] = "Cartesian"
-        self._apply_settings(self.settings)
+        for key in self.user_settings:
+            if self.user_settings[key] is None and key in self._settings:
+                self._settings.pop(key)
 
-    def _apply_settings(
-        self, settings: dict[str, Any]
-    ) -> None:  # settings as attributes
-        for key, value in settings.items():
-            setattr(self, key, value)
+        self._settings.update(filtered_user_settings)
+        # set default coords-type to Cartesian
+        if "coords-type" not in self._settings:
+            self._settings["coords-type"] = "Cartesian"
+        #self._apply_settings(self.settings)
+
+    # def _apply_settings(
+    #     self, settings: dict[str, Any]
+    # ) -> None:  # settings as attributes
+    #     for key, value in settings.items():
+    #         setattr(self, key, value)
 
     def get_input_set(
         self,
         structure: Structure = None,
+        **kwargs
     ) -> JdftxInputSet:
         """Get a JDFTx input set for a structure.
 
@@ -169,28 +171,41 @@ class JdftxInputGenerator(InputGenerator):
         ----------
         structure
             A Pymatgen Structure.
+        **kwargs
+            Additional settings to override defaults
 
         Returns
         -------
         JdftxInputSet
             A JDFTx input set.
         """
-        self.settings.update(self.user_settings)
-        self.set_kgrid(structure=structure)
-        self.set_coulomb_interaction(structure=structure)
-        self.set_nbands(structure=structure)
-        self.set_mu()
-        self.set_pseudos()
-        self.set_magnetic_moments(structure=structure)
-        self._apply_settings(self.settings)
+        # user_settings = self.user_settings.copy()
+        # user_settings.update(kwargs)
+        #print("user_settings_get_input_set:", user_settings)
+        settings = self._settings.copy()
+        print("user_settings:", self.user_settings)
+        for key, value in kwargs.items():
+            if key not in self.user_settings:
+                settings[key] = value
 
+        #self.settings.update(self.user_settings)
+        
+        print("settings.update:", settings)
+        self._set_kgrid(settings, structure)
+        self._set_coulomb_interaction(settings, structure)
+        self._set_nbands(settings, structure)
+        self._set_mu(settings)
+        self._set_pseudos(settings)
+        self._set_magnetic_moments(settings, structure)
+        #self._apply_settings(self.settings) #here
+        #print("self.settings:", self.settings)
         jdftx_structure = JDFTXStructure(structure)
-        jdftxinputs = self.settings
-        jdftxinput = JDFTXInfile.from_dict(jdftxinputs)
-
+        #jdftxinputs = self.settings
+        jdftxinput = JDFTXInfile.from_dict(settings)
+        print("jdftxinput_get_input_set:", jdftxinput)
         return JdftxInputSet(jdftxinput=jdftxinput, jdftxstructure=jdftx_structure)
 
-    def set_kgrid(self, structure: Structure) -> Kpoint:
+    def _set_kgrid(self, settings, structure: Structure):
         """Get k-point grid.
 
         Parameters
@@ -223,13 +238,10 @@ class JdftxInputGenerator(InputGenerator):
                 "n2": kpoints[2],
             }
         }
-        self.settings.update(kpoint_update)
+        settings.update(kpoint_update)
         return
 
-    def set_coulomb_interaction(
-        self,
-        structure: Structure,
-    ) -> JDFTXInfile:
+    def _set_coulomb_interaction(self, settings, structure: Structure) -> JDFTXInfile:
         """
         Set coulomb-interaction and coulomb-truncation for JDFTXInfile.
 
@@ -246,46 +258,46 @@ class JdftxInputGenerator(InputGenerator):
             A pymatgen.io.jdftx.inputs.JDFTXInfile object
 
         """
-        if "coulomb-interaction" in self.settings:
+        if "coulomb-interaction" in settings:
             return
         if self.calc_type == "bulk":
-            self.settings["coulomb-interaction"] = {
+            settings["coulomb-interaction"] = {
                 "truncationType": "Periodic",
             }
             return
         if self.calc_type == "surface":
-            self.settings["coulomb-interaction"] = {
+            settings["coulomb-interaction"] = {
                 "truncationType": "Slab",
                 "dir": "001",
             }
         elif self.calc_type == "molecule":
-            self.settings["coulomb-interaction"] = {
+            settings["coulomb-interaction"] = {
                 "truncationType": "Isolated",
             }
         com = center_of_mass(structure=structure)
-        if self.settings["coords-type"] == "Cartesian":
+        if settings["coords-type"] == "Cartesian":
             com = com @ structure.lattice.matrix * ang_to_bohr
-        elif self.settings["coords-type"] == "Lattice":
+        elif settings["coords-type"] == "Lattice":
             com = com * ang_to_bohr
-        self.settings["coulomb-truncation-embed"] = {
+        settings["coulomb-truncation-embed"] = {
             "c0": com[0],
             "c1": com[1],
             "c2": com[2],
         }
         return
 
-    def set_nbands(self, structure: Structure) -> None:
+    def _set_nbands(self, settings, structure: Structure) -> None:
         """Set number of bands in DFT calculation."""
+        if "elec-n-bands" in settings:
+            return
         nelec = 0
         for atom in structure.species:
             nelec += _PSEUDO_CONFIG[self.pseudopotentials][str(atom)]
         nbands_add = int(nelec / 2) + 10
         nbands_mult = int(nelec / 2) * _BEAST_CONFIG["bands_multiplier"]
-        self.settings["elec-n-bands"] = max(nbands_add, nbands_mult)
+        settings["elec-n-bands"] = max(nbands_add, nbands_mult)
 
-    def set_pseudos(
-        self,
-    ) -> None:
+    def _set_pseudos(self, settings) -> None:
         """Set ion-species tag corresponding to pseudopotentials."""
         if SETTINGS.JDFTX_PSEUDOS_DIR is not None:
             pseudos_str = str(
@@ -301,26 +313,26 @@ class JdftxInputGenerator(InputGenerator):
         # do not override pseudopotentials in settings
         if "ion-species" in self.user_settings:
             return
-        self.settings["ion-species"] = add_tags
+        settings["ion-species"] = add_tags
         return
 
-    def set_mu(self) -> None:
+    def _set_mu(self, settings) -> None:
         """Set absolute electron chemical potential (fermi level) for GC-DFT."""
         # never override mu in settings
-        if "target-mu" in self.settings or self.potential is None:
+        if "target-mu" in settings or self.potential is None:
             return
-        if "pcm-variant" in self.settings:
-            solvent_model = self.settings["pcm-variant"]
+        if "pcm-variant" in settings:
+            solvent_model = settings["pcm-variant"]
         else:
             solvent_model = "CANDLE"
             logging.warning("No solvent model specified, using CANDLE to set mu.")
         ashep = _BEAST_CONFIG["ASHEP"][solvent_model]
         # calculate absolute potential in Hartree
         mu = (ashep - self.potential) * eV_to_Ha
-        self.settings["target-mu"] = {"mu": mu}
+        settings["target-mu"] = {"mu": mu}
         return
 
-    def set_magnetic_moments(self, structure: Structure) -> None:
+    def _set_magnetic_moments(self, settings, structure: Structure) -> None:
         """Set the magnetic moments for each atom in the structure.
 
         If the user specified magnetic moments as JDFTx tags, they will
@@ -340,8 +352,8 @@ class JdftxInputGenerator(InputGenerator):
         """
         # check if user set JFDTx magnetic tags and return if true
         if (
-            "initial-magnetic-moments" in self.settings
-            or "elec-initial-magnetization" in self.settings
+            "initial-magnetic-moments" in settings
+            or "elec-initial-magnetization" in settings
         ):
             return
         # if magmoms set on structure, build JDFTx tag
@@ -371,7 +383,7 @@ class JdftxInputGenerator(InputGenerator):
             tag_str = ""
             for element, magmom_list in magmoms.items():
                 tag_str += f"{element} " + " ".join(list(map(str, magmom_list))) + " "
-        self.settings["initial-magnetic-moments"] = tag_str
+        settings["initial-magnetic-moments"] = tag_str
         return
 
 

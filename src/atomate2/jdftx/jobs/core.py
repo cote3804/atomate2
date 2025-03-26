@@ -28,14 +28,10 @@ class SinglePointMaker(BaseJdftxMaker):
     input_set_generator: JdftxInputGenerator = field(
         default_factory=SinglePointSetGenerator
     )
-
     def __post_init__(self):
-        super().__post_init__() if hasattr(super(), "__post_init__") else None
-
-        self.metadata.update({
-            "calculation_type": "bulk",
-        })
-
+        self.write_input_set_kwargs.update({"ionic-minimize": {"nIterations": 0},
+                                            "electronic-minimize": {"nIterations": 1000},
+                                            "lcao-params":{"nIter": 1000}})
 
 @dataclass
 class IonicMinMaker(BaseJdftxMaker):
@@ -45,6 +41,8 @@ class IonicMinMaker(BaseJdftxMaker):
     input_set_generator: JdftxInputGenerator = field(
         default_factory=IonicMinSetGenerator
     )
+    def __post_init__(self):
+        self.write_input_set_kwargs.update({"ionic-minimize": {"nIterations": 100}})
 
 
 @dataclass
@@ -55,3 +53,6 @@ class LatticeMinMaker(BaseJdftxMaker):
     input_set_generator: JdftxInputGenerator = field(
         default_factory=LatticeMinSetGenerator
     )
+    def __post_init__(self):
+        self.write_input_set_kwargs.update({"lattice-minimize": {"nIterations": 100},
+                                            "latt-move-scale": {"s0": 1, "s1": 1, "s2": 1}})

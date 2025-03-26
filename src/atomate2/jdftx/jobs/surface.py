@@ -43,17 +43,12 @@ class SurfaceMinMaker(BaseJdftxMaker):
     input_set_generator: JdftxInputGenerator = field(
         default_factory=lambda: IonicMinSetGenerator(
             coulomb_truncation=True,
-            auto_kpoint_density=1000,
             calc_type="surface",
         )
     )
-    
     def __post_init__(self):
-        super().__post_init__() if hasattr(super(), "__post_init__") else None
-
-        self.metadata.update({
-            "calculation_type": "slab",
-        })
+        self.write_input_set_kwargs.update({"ionic-minimize": {"nIterations": 100},
+        },)
 
 
 @dataclass
@@ -62,7 +57,7 @@ class MolMinMaker(BaseJdftxMaker):
 
     name: str = "surface_ionic_min"
     input_set_generator: JdftxInputGenerator = field(
-        default_factory=IonicMinSetGenerator(
+        default_factory=lambda: IonicMinSetGenerator(
             coulomb_truncation=True,
             calc_type="molecule",
         )
@@ -84,7 +79,7 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
     molecule_structures = []
 
     for i, molecule in enumerate(molecules):
-        boxed_molecule = molecule.get_boxed_structure(10, 10, 10)
+        boxed_molecule = molecule.get_boxed_structure(15, 15, 15)
         molecule_structures.append(boxed_molecule)
 
     return  molecule_structures
@@ -93,8 +88,8 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
 def generate_supercell(structure, super_cell) -> Structure:
     if structure is dict:
         structure = Structure.from_dict(structure)
-    if structure is not Structure:
-        raise TypeError("structure must be a Structure object or dict")
+    # if structure is not Structure:
+    #     raise TypeError(f"structure must be a Structure object or dict and now is {type(structure)}")
     supercell = structure.make_supercell(super_cell)
     return supercell
 
