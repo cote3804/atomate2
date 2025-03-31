@@ -60,3 +60,19 @@ class BEASTSetGenerator(JdftxInputGenerator):
             "ionic-minimize": {"nIterations": 100},
         }
     )
+
+@dataclass
+class SCANSetGenerator(JdftxInputGenerator):
+    """Generate BEAST Database ionic relaxation set."""
+    opt_type = "Ionic Optimization"
+    default_settings: dict = field(
+        default_factory=lambda: {
+            **_BASE_JDFTX_SET,
+            "fluid": {"type": "LinearPCM"},
+            "pcm-variant": "CANDLE",
+            "fluid-solvent": {"name": "H2O"},
+            "fluid-cation": {"name": "Na+", "concentration": 0.5},
+            "fluid-anion": {"name": "F-", "concentration": 0.5},
+            "elec-ex-corr": {"funcX": "mgga-x-r2scan","funcC": "mgga-c-r2scan"}
+        }
+    )
