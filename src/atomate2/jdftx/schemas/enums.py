@@ -32,6 +32,7 @@ class CalcType(ValueEnum):
     MGGA_TPSS = ("mgga-TPSS",)
     ORB_GLLBSC = ("orb-GLLBsc",)
     POT_LB94 = "pot-LB94"
+    MGGA_R2_SCAN = ("mgga-c-r2scan",)
 
 
 class TaskType(ValueEnum):
