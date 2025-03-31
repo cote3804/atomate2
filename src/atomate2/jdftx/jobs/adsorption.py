@@ -5,6 +5,18 @@ import numpy as np
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.core.operations import SymmOp
 from itertools import product
+from jobflow import job
+
+@job
+def generate_adsorbed_structures(structure, adsorbate, supercell):
+    undercoord_sites = find_undercoordinated_Ir_sites(structure)
+    surface_sites = get_surface_sites(undercoord_sites)
+    adsorption_sites = get_non_equivalent_sites(surface_sites, structure, supercell)    
+    surface_sites_numpy = np.array([site.coords for site in adsorption_sites])
+    for site_coord in surface_sites_numpy:
+        slab = place_adsorbate(slab, adsorbate, site_coord)
+        
+    return slab
 
 def find_undercoordinated_Ir_sites(
         structure: Structure,
