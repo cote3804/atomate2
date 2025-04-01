@@ -74,6 +74,8 @@ class SCANSetGenerator(JdftxInputGenerator):
             "fluid-cation": {"name": "Na+", "concentration": 0.5},
             "fluid-anion": {"name": "F-", "concentration": 0.5},
             "elec-ex-corr": {"funcX": "mgga-x-r2scan","funcC": "mgga-c-r2scan"},
-            "ionic-minimize": {"nIterations": 100}
+            "ionic-minimize": {"nIterations": 100},
+            "ion-species": "/projects/beast/Software/JDFTx/build-gnu/pseudopotentials/SG15/$ID_ONCV_PBE.upf",
+            "van-der-waals": None
         }
     )
