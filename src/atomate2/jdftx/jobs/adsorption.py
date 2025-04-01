@@ -14,7 +14,7 @@ def generate_adsorbed_structures(structure, adsorbate, supercell):
     adsorption_sites = get_non_equivalent_sites(surface_sites, structure, supercell)    
     surface_sites_numpy = np.array([site.coords for site in adsorption_sites])
     for site_coord in surface_sites_numpy:
-        slab = place_adsorbate(slab, adsorbate, site_coord)
+        slab = place_adsorbate(structure, adsorbate, site_coord)
         
     return slab
 
