@@ -377,7 +377,7 @@ class JdftxInputGenerator(InputGenerator):
             magmoms = defaultdict(list)
             for species in structure.species:
                 if species.is_metal:
-                    magmoms[str(species)].append(5)
+                    magmoms[str(species)].append(4)
                 else:
                     magmoms[str(species)].append(0)
             tag_str = ""
