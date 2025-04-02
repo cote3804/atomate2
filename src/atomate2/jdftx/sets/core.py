@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class SinglePointSetGenerator(JdftxInputGenerator):
     """Class to generate JDFTx input sets that follow BEAST convention."""
 
-    default_settings: dict = field(
+    _default_settings: dict = field(
         default_factory=lambda: {
             **_BASE_JDFTX_SET,
         }
@@ -25,7 +25,7 @@ class SinglePointSetGenerator(JdftxInputGenerator):
 class IonicMinSetGenerator(JdftxInputGenerator):
     """Class to generate JDFTx relax sets."""
 
-    default_settings: dict = field(
+    _default_settings: dict = field(
         default_factory=lambda: {
             **_BASE_JDFTX_SET,
             "ionic-minimize": {"nIterations": 100},
@@ -37,7 +37,7 @@ class IonicMinSetGenerator(JdftxInputGenerator):
 class LatticeMinSetGenerator(JdftxInputGenerator):
     """Class to generate JDFTx lattice minimization sets."""
 
-    default_settings: dict = field(
+    _default_settings: dict = field(
         default_factory=lambda: {
             **_BASE_JDFTX_SET,
             "lattice-minimize": {"nIterations": 100},
@@ -49,7 +49,7 @@ class LatticeMinSetGenerator(JdftxInputGenerator):
 class BEASTSetGenerator(JdftxInputGenerator):
     """Generate BEAST Database ionic relaxation set."""
     opt_type = "Ionic Optimization"
-    default_settings: dict = field(
+    _default_settings: dict = field(
         default_factory=lambda: {
             **_BASE_JDFTX_SET,
             "fluid": {"type": "LinearPCM"},
