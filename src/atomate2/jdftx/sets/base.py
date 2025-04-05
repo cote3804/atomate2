@@ -183,26 +183,19 @@ class JdftxInputGenerator(InputGenerator):
         # user_settings.update(kwargs)
         #print("user_settings_get_input_set:", user_settings)
         settings = self._settings.copy()
-        print("user_settings:", self.user_settings)
         for key, value in kwargs.items():
             if key not in self.user_settings:
                 settings[key] = value
 
-        #self.settings.update(self.user_settings)
-        
-        print("settings.update:", settings)
         self._set_kgrid(settings, structure)
         self._set_coulomb_interaction(settings, structure)
         self._set_nbands(settings, structure)
         self._set_mu(settings)
         self._set_pseudos(settings)
         self._set_magnetic_moments(settings, structure)
-        #self._apply_settings(self.settings) #here
-        #print("self.settings:", self.settings)
+
         jdftx_structure = JDFTXStructure(structure)
-        #jdftxinputs = self.settings
         jdftxinput = JDFTXInfile.from_dict(settings)
-        print("jdftxinput_get_input_set:", jdftxinput)
         return JdftxInputSet(jdftxinput=jdftxinput, jdftxstructure=jdftx_structure)
 
     def _set_kgrid(self, settings, structure: Structure):
