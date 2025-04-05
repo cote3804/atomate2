@@ -62,6 +62,8 @@ class MolMinMaker(BaseJdftxMaker):
             calc_type="molecule",
         )
     )
+    def __post_init__(self):
+        self.write_input_set_kwargs.update({})
 
 def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
     """Get the molecule structure.
