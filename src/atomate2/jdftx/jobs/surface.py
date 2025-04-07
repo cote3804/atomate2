@@ -14,7 +14,7 @@ from pymatgen.core.surface import (
 )
 import numpy as np
 
-from pymatgen.core import Molecule, Structure
+from pymatgen.core import Molecule, Structure, Lattice
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
 
 
