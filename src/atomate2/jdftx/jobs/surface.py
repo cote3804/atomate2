@@ -86,6 +86,32 @@ def get_boxed_molecules(molecules: list[Molecule]) -> list[Structure]:
 
     return  molecule_structures
 
+def Scale_Vacuum(struct, vw):
+    A, B, C = struct.lattice.a, struct.lattice.b, struct.lattice.c
+    tmp_coords = struct.frac_coords
+    tmp_species = struct.species
+    zVals = []
+    for coord in tmp_coords:
+        zVals.append(coord[2]*C)
+    zVals = np.asarray(zVals)
+    MAX = np.max(zVals)
+    MIN = np.min(zVals)
+    w = MAX - MIN
+    print(w)
+    new_h = w+ 2.0*vw
+    scale = C / new_h
+    print(scale)
+    mid = (MAX + MIN)/(2.0*C)
+    shift = mid*scale - 0.5
+    print(shift)
+    for coord in tmp_coords:
+        coord[2]*=scale
+        coord[2]-=shift
+    C = new_h
+    alpha, beta, gamma = 90, 90, 90
+    lattice = Lattice.from_parameters(A, B, C, alpha, beta, gamma)
+    return Structure(lattice, tmp_species, tmp_coords)
+
 @job
 def generate_supercell(structure, super_cell) -> Structure:
     if structure is dict:
@@ -101,6 +127,7 @@ def generate_slabs(
     min_slab_size: float = 2.0, 
     surface_idx: tuple[int, int, int] = (1, 0, 0),
     min_vacuum_size: float = 20.0,
+    scale_slab: bool = True,
     min_lw: float = 10.0,
     in_unit_planes: bool = True,
     center_slab: bool = True,
@@ -130,8 +157,13 @@ def generate_slabs(
     
     slabs = [slab for slab in slabs if not (slab.is_polar() and not slab.is_symmetric())]
 
-    for slab in slabs:
+    for s in slabs:
+        slab = s.get_orthogonal_c_slab()
         slab.make_supercell(super_cell)
+        if scale_slab is True:
+            slab = Scale_Vacuum(slab, min_vacuum_size)
+        else:
+            continue
 
     logger.info(f"Generated {len(slabs)} slabs for {surface_idx} surface")
 
