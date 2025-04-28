@@ -77,7 +77,7 @@ class TaskDoc(StructureMetadata):
 
     @classmethod
     def from_directory(
-        cls: type[_T],
+        cls,
         dir_name: Union[Path, str],
         additional_fields: dict[str, Any] = None,
         # **jdftx_calculation_kwargs, #TODO implement
