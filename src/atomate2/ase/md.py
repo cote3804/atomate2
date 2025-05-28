@@ -456,3 +456,11 @@ class GFNxTBMDMaker(AseMDMaker):
             ) from None
 
         return TBLite(atoms=None, **self.calculator_kwargs)
+
+from mace.calculators import MACECalculator
+class MACE_MDMaker(AseMDMaker):
+    @property
+    def calculator(self):
+        model_path = "/Users/sophi/IrO2/MLIP/Sophie/Models/MACE_model_1.model"
+        device = "mps"
+        return MACECalculator(model_paths=model_path, device=device, default_dtype="float32")
