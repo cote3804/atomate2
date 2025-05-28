@@ -461,6 +461,6 @@ from mace.calculators import MACECalculator
 class MACE_MDMaker(AseMDMaker):
     @property
     def calculator(self):
-        model_path = "/Users/sophi/IrO2/MLIP/Sophie/Models/MACE_model_1.model"
-        device = "mps"
-        return MACECalculator(model_paths=model_path, device=device, default_dtype="float32")
+        model_path = "/scratch/soge8904/MLIP/test_concatenated/MACE_model_1.model"
+        device = "cuda"
+        return MACECalculator(model_paths=model_path, device=device)
