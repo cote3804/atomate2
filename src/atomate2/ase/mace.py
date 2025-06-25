@@ -45,7 +45,3 @@ class MaceRelaxMaker(AseRelaxMaker):
             **self.calculator_kwargs
         )
     
-    @job(data=_ASE_DATA_OBJECTS)
-    def make(self, mol_or_struct, prev_dir=None):
-        """Make MACE relaxation job with GridFS storage."""
-        return super().make(mol_or_struct, prev_dir)
