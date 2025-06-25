@@ -25,7 +25,8 @@ if TYPE_CHECKING:
 
     from atomate2.ase.schemas import AseMoleculeTaskDoc, AseStructureTaskDoc
 
-_ASE_DATA_OBJECTS = [PmgTrajectory, AseTrajectory]
+# _ASE_DATA_OBJECTS = [PmgTrajectory, AseTrajectory]
+_ASE_DATA_OBJECTS = ["*.traj", "*.json.gz", "trajectory*"]
 
 
 @dataclass
