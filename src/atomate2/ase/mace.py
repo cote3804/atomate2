@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from atomate2.ase.jobs import AseRelaxMaker
 from ase.calculators.calculator import Calculator
 from emmet.core.vasp.calculation import StoreTrajectoryOption
-from jobflow.core import job
+from jobflow import job
 import json
 import os
 
@@ -87,7 +87,7 @@ class MaceRelaxMaker(AseRelaxMaker):
         
         return result
     
-    @job(data=["*.traj", "*.json.gz", "*.log"])
+    @job(data=_ASE_DATA_OBJECTS)
     def make(self, mol_or_struct, prev_dir=None):
         """Make job with output debugging."""
         print("=== MAKE METHOD STARTED ===")
