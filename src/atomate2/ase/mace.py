@@ -2,18 +2,23 @@ from dataclasses import dataclass, field
 
 from atomate2.ase.jobs import AseRelaxMaker
 from ase.calculators.calculator import Calculator
+from jobflow.core import job
+
+_ASE_DATA_OBJECTS = ["*.traj", "*.json.gz", "trajectory*"]
 
 @dataclass
 class MaceRelaxMaker(AseRelaxMaker):
 
     relax_cell = False
-#    model_path: str = "/scratch/soge8904/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
-    model_path: str = "/Users/sophi/DATA/IrO2/MLIP/all_data_06_14_2025/MACE_all_data_06_14_2025_stagetwo_compiled.model"
+    model_path: str = "/scratch/soge8904/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
+#    model_path: str = "/Users/sophi/DATA/IrO2/MLIP/all_data_06_14_2025/MACE_all_data_06_14_2025_stagetwo_compiled.model"
     
     device: str = "cuda"
 
     relax_kwargs: dict = field(default_factory=lambda: {
         "fmax": 0.01, 
+        "traj_file": "mace_min.traj",
+        "verbose": True 
     })
 
     optimizer_kwargs: dict = field(default_factory=lambda: {
@@ -39,3 +44,8 @@ class MaceRelaxMaker(AseRelaxMaker):
             device=self.device,
             **self.calculator_kwargs
         )
+    
+    @job(data=_ASE_DATA_OBJECTS)
+    def make(self, mol_or_struct, prev_dir=None):
+        """Make MACE relaxation job with GridFS storage."""
+        return super().make(mol_or_struct, prev_dir)
