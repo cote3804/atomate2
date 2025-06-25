@@ -30,8 +30,8 @@ class SinglePointMaker(BaseJdftxMaker):
     )
     def __post_init__(self):
         self.write_input_set_kwargs.update({"ionic-minimize": {"nIterations": 0},
-                                            "electronic-minimize": {"nIterations": 1000},
-                                            "lcao-params":{"nIter": 1000}})
+                                            "electronic-minimize": {"nIterations": 1000, "energyDiffThreshold": 1e-05},
+                                            })
 
 @dataclass
 class IonicMinMaker(BaseJdftxMaker):
