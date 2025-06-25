@@ -460,14 +460,15 @@ class AseTaskDoc(AseBaseModel):
                     for key in ("energy", "forces", "stress")
                 }
 
-                current_mol_or_struct = (
-                    trajectory[idx]
-                    if any(
-                        v in ionic_step_data
-                        for v in ("mol_or_struct", "structure", "molecule")
-                    )
-                    else None
-                )
+                # current_mol_or_struct = (
+                #     trajectory[idx]
+                #     if any(
+                #         v in ionic_step_data
+                #         for v in ("mol_or_struct", "structure", "molecule")
+                #     )
+                #     else None
+                # )
+                current_mol_or_struct = None
 
                 # include "magmoms" in :obj:`ionic_step` if the trajectory has "magmoms"
                 if "magmoms" in trajectory.frame_properties[idx]:
@@ -489,12 +490,12 @@ class AseTaskDoc(AseBaseModel):
                 ionic_steps.append(ionic_step)
 
         objects: dict[AseObject, Any] = {}
-        if store_trajectory != StoreTrajectoryOption.NO:
+        #if store_trajectory != StoreTrajectoryOption.NO:
             # For VASP calculations, the PARTIAL trajectory option removes
             # electronic step info. There is no equivalent for classical
             # forcefields, so we just save the same info for FULL and
             # PARTIAL options.
-            objects[AseObject.TRAJECTORY] = trajectory  # type: ignore[index]
+            #objects[AseObject.TRAJECTORY] = trajectory  # type: ignore[index]
 
         output_doc = OutputDoc(
             mol_or_struct=output_mol_or_struct,
