@@ -167,6 +167,7 @@ class AseRelaxMaker(AseMaker):
         -------
         AseStructureTaskDoc or AseMoleculeTaskDoc
         """
+        print(_ASE_DATA_OBJECTS)
         return AseTaskDoc.to_mol_or_struct_metadata_doc(
             getattr(self.calculator, "name", type(self.calculator).__name__),
             self.run_ase(mol_or_struct, prev_dir=prev_dir),
