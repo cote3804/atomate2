@@ -13,7 +13,7 @@ _ASE_DATA_OBJECTS = ["*.traj", "*.json.gz", "trajectory*"]
 class MaceRelaxMaker(AseRelaxMaker):
 
     relax_cell = False
-    model_path: str = "/scratch/soge8904/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
+    model_path: str = "/pscratch/sd/s/soge8904/kestrel/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
 #    model_path: str = "/Users/sophi/DATA/IrO2/MLIP/all_data_06_14_2025/MACE_all_data_06_14_2025_stagetwo_compiled.model"
     
     device: str = "cuda"
