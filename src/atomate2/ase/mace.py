@@ -17,6 +17,7 @@ class MaceRelaxMaker(AseRelaxMaker):
     
     device: str = "cuda"
     relax_cell: bool = False
+    ionic_step_data = None
 
     relax_kwargs: dict = field(default_factory=lambda: {
         "fmax": 0.01, 
