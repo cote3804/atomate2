@@ -51,7 +51,9 @@ class MaceRelaxMaker(AseRelaxMaker):
 @dataclass
 class MaceMDMaker(AseMDMaker):
 
-    model_path: str = "/pscratch/sd/s/soge8904/kestrel/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
+    #model_path: str = "/pscratch/sd/s/soge8904/kestrel/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
+    model_path: str = "/scratch/soge8904/MLIP/models_training/all_data_06_14_2025/seed_137/MACE_all_data_06_14_2025_stagetwo_compiled.model"
+
     device: str = "cuda"
     store_trajectory: StoreTrajectoryOption = StoreTrajectoryOption.NO
 
