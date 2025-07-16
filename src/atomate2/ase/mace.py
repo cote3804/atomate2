@@ -56,12 +56,8 @@ class MaceMDMaker(AseMDMaker):
 
     device: str = "cuda"
     store_trajectory: StoreTrajectoryOption = StoreTrajectoryOption.NO
+    _ensemble: MDEnsemble = MDEnsemble.nvt
 
-    time_step: float = 1
-    n_steps: int = 100
-    ensemble: MDEnsemble = MDEnsemble.npt
-    dynamics: str = "npt"
-    temperature: float = 300.0
     pressure: float = 0.00101325 #kilobars?
     ionic_step_data: None = None
     verbose: bool = True
@@ -71,6 +67,21 @@ class MaceMDMaker(AseMDMaker):
     # ase_md_kwargs = {"ttime": 100*units.fs,
     #             "pfactor": 75*units.fs**2,
     #             "mask": mask}
+
+    #following "ensemble" code is to allow setting the ensemble attribute through a string, instead of having to import 
+    #MDEnsemble in every submission script.
+    @property
+    def ensemble(self) -> MDEnsemble:
+        return self._ensemble
+
+    @ensemble.setter
+    def ensemble(self, value):
+        if isinstance(value, str):
+            self._ensemble = MDEnsemble(value)  
+        elif isinstance(value, MDEnsemble):
+            self._ensemble = value              
+        else:
+            raise TypeError(f"Invalid ensemble: {value}")
 
     @property
     def calculator(self) -> Calculator:
