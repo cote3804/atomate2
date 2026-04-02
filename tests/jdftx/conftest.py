@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Literal
 
 import pytest
 from jobflow import CURRENT_JOB
-from monty.io import zopen
 from monty.os.path import zpath as monty_zpath
 from pymatgen.io.jdftx.inputs import JDFTXInfile
 from pymatgen.io.jdftx.sets import FILE_NAMES
@@ -31,16 +30,6 @@ _FAKE_RUN_JDFTX_KWARGS: dict[str, dict] = {}
 
 def zpath(path: str | Path) -> Path:
     return Path(monty_zpath(str(path)))
-
-
-def parse_inp_file_zipped(path: str | Path) -> JDFTXInfile:
-    """Parse a possibly gzipped JDFTx input file.
-
-    Note that `JDFTXInfile` does not currently support
-    gzipped input like other I/O in pymatgen.
-    """
-    with zopen(zpath(path), "rt") as f:
-        return JDFTXInfile.from_str(f.read())
 
 
 @pytest.fixture(scope="session")
@@ -127,8 +116,8 @@ def fake_run_jdftx(
 def check_input(ref_path, input_settings: Sequence[str] = None):
     logger.info("Checking inputs.")
 
-    ref_input = parse_inp_file_zipped(ref_path / "inputs" / "init.in")
-    user_input = parse_inp_file_zipped("init.in")
+    ref_input = JDFTXInfile.from_file(ref_path / "inputs" / "init.in")
+    user_input = JDFTXInfile.from_file(zpath("init.in"))
 
     keys_to_check = set(user_input) if input_settings is None else set(input_settings)
 
@@ -166,21 +155,10 @@ def clear_jdftx_inputs():
     logger.info("Cleared jdftx inputs")
 
 
-def copy_jdftx_outputs(ref_path: Path, suffix: str = "outputs"):
+def copy_jdftx_outputs(ref_path: Path):
     base_path = Path(os.getcwd())
-    output_path = ref_path / suffix
+    output_path = ref_path / "outputs"
     logger.info(f"copied output files to {base_path}")
     for output_file in output_path.iterdir():
         if output_file.is_file():
-            # First check if file is zipped
-            if any(
-                output_file.name.lower().endswith(suffix)
-                for suffix in (".gz", ".bz2", ".z", ".lzma", ".xz")
-            ):
-                with (
-                    zopen(output_file, "rb") as f_in,
-                    open(output_file.name.rsplit(".", 1)[0], "wb") as f_out,
-                ):
-                    f_out.writelines(f_in)
-            else:
-                shutil.copy(output_file, ".")
+            shutil.copy(output_file, ".")

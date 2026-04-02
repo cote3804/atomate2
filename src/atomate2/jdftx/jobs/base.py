@@ -8,16 +8,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from jobflow import Maker, Response, job
-from pymatgen.core.trajectory import Trajectory
-from pymatgen.electronic_structure.bandstructure import (
-    BandStructure,
-    BandStructureSymmLine,
-)
-from pymatgen.util.due import Doi, due
 
-from atomate2.jdftx.files import write_jdftx_input_set
-from atomate2.jdftx.run import run_jdftx, should_stop_children
-from atomate2.jdftx.schemas.task import TaskDoc
 from atomate2.jdftx.sets.base import JdftxInputGenerator
 
 if TYPE_CHECKING:
@@ -25,7 +16,15 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pymatgen.core import Structure
+from pymatgen.core.trajectory import Trajectory
+from pymatgen.electronic_structure.bandstructure import (
+    BandStructure,
+    BandStructureSymmLine,
+)
 
+from atomate2.jdftx.files import write_jdftx_input_set
+from atomate2.jdftx.run import run_jdftx, should_stop_children
+from atomate2.jdftx.schemas.task import TaskDoc
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +73,6 @@ def jdftx_job(method: Callable) -> job:
     return job(method, data=_DATA_OBJECTS, output_schema=TaskDoc)
 
 
-@due.dcite(Doi("10.1016/j.softx.2017.10.006"), description="JDFTx")
 @dataclass
 class BaseJdftxMaker(Maker):
     """
