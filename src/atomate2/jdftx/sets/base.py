@@ -117,8 +117,11 @@ class JdftxInputGenerator(InputGenerator):
         self._apply_settings(self.settings)
 
         jdftxinput = JDFTXInfile.from_dict(self.settings)
-
-        return JdftxInputSet(jdftxinput=jdftxinput, structure=structure)
+        return JdftxInputSet(
+            jdftxinput=jdftxinput, 
+            structure=structure, 
+            selective_dynamics=self.get_selective_dynamics(structure=structure)
+            )
 
     def set_kgrid(self, structure: Structure) -> None:
         """Get k-point grid.
@@ -296,6 +299,26 @@ class JdftxInputGenerator(InputGenerator):
         self.settings["initial-magnetic-moments"] = tag_str
         return
 
+    def get_selective_dynamics(self, structure: Structure) -> list[bool]|None:
+        """Get selective dynamics list for a structure.
+
+        This is a placeholder function that currently returns None. In the future,
+        this function can be implemented to automatically determine which atoms
+        should be fixed or allowed to relax based on the structure and calculation
+        type.
+
+        Parameters
+        ----------
+        structure
+            A pymatgen structure
+
+        Returns
+        -------
+        list[bool]
+            A list of booleans indicating whether each atom in the structure is
+            allowed to relax (True) or is fixed (False).
+        """
+        return structure.properties["selective_dynamics"] if "selective_dynamics" in structure.properties else None
 
 def center_of_mass(structure: Structure) -> np.ndarray:
     """

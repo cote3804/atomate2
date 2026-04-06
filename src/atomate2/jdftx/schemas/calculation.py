@@ -191,6 +191,22 @@ class CalculationOutput(BaseModel):
             ),
             parameters=jdftxoutput.to_dict(),
         )
+    
+    @classmethod
+    def from_maggma(cls, data: dict) -> "CalculationOutput":
+        """Load the class ignoring anything in blob storage.
+        
+        This method expects the dictionary returned by querying the job store
+        with maggma. It will ignore any fields that have been moved to blob
+        storage, effectively skipping them.
+        """
+        init_data = {}
+        for k, v in data.items():
+            if isinstance(v, dict) and "blob_uuid" in v.keys():
+                continue
+            init_data[k] = v
+        return cls(**init_data)
+
 
 
 class Calculation(BaseModel):
