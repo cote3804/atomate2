@@ -4,7 +4,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from custodian.jdftx.jobs import JDFTxJob  # Waiting on Sophie's PR
 from emmet.core.structure import StructureMetadata
@@ -31,13 +31,13 @@ _T = TypeVar("_T", bound="TaskDoc")
 class CustodianDoc(BaseModel):
     """Custodian data for JDFTx calculations."""
 
-    corrections: Optional[list[Any]] = Field(
+    corrections: list[Any] | None = Field(
         None,
         title="Custodian Corrections",
         description="list of custodian correction data for calculation.",
     )
 
-    job: Optional[Union[dict[str, Any], JDFTxJob]] = Field(
+    job: Union[dict[str, Any], JDFTxJob] | None = Field(
         None,
         title="Custodian Job Data",
         description="Job data logged by custodian.",
@@ -47,37 +47,37 @@ class CustodianDoc(BaseModel):
 class TaskDoc(StructureMetadata):
     """Calculation-level details about JDFTx calculations."""
 
-    dir_name: Optional[Union[str, Path]] = Field(
+    dir_name: Union[str, Path] | None = Field(
         None, description="The directory for this JDFTx task"
     )
     last_updated: str = Field(
         default_factory=datetime_str,
         description="Timestamp for this task document was last updated",
     )
-    comnpleted_at: Optional[str] = Field(
+    comnpleted_at: str | None = Field(
         None, description="Timestamp for when this task was completed"
     )
-    calc_inputs: Optional[CalculationInput] = Field(
+    calc_inputs: CalculationInput | None = Field(
         {}, description="JDFTx calculation inputs"
     )
-    run_stats: Optional[dict[str, RunStatistics]] = Field(
+    run_stats: dict[str, RunStatistics] | None = Field(
         None,
         description="Summary of runtime statistics for each calculation in this task",
     )
-    calc_outputs: Optional[CalculationOutput] = Field(
+    calc_outputs: CalculationOutput | None = Field(
         None,
         description="JDFTx calculation outputs",
     )
-    state: Optional[JDFTxStatus] = Field(
+    state: JDFTxStatus | None = Field(
         None, description="State of this JDFTx calculation"
     )
-    task_type: Optional[TaskType] = Field(
+    task_type: TaskType | None = Field(
         None, description="The type of task this calculation is"
     )
 
     @classmethod
     def from_directory(
-        cls: type[_T],
+        cls,
         dir_name: Union[Path, str],
         additional_fields: dict[str, Any] = None,
         # **jdftx_calculation_kwargs, #TODO implement
